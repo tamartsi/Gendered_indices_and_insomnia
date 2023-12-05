@@ -1,0 +1,186 @@
+---
+title: "Relevel variables and assess missingness"
+output: 
+  html_document:
+    toc: true
+    keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r loading packages}
+library(tidyverse)
+library(survey)
+library(plyr)
+library(dplyr)
+library(factoextra)
+library(labelled)
+library(tableone)
+library(memisc)
+library(sjlabelled)
+library(mi)
+library(boot)
+library(glmnet)
+library(mice)
+library(UpSetR)
+library(naniar)
+```
+
+# Read in the data
+
+```{r}
+folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gender_measure"
+data_with_sleep <- read_csv(file.path(folder_path, "Data/sol_sofer_sorajja_joon_covariates_20220810.csv"))
+
+```
+
+Remove CESD10, we will recompute it without the sleep-related question; factor variables.
+
+```{r}
+data_with_sleep <- data_with_sleep %>%
+  dplyr::select(-CESD10)
+data_with_sleep$GENDER <- as.factor(data_with_sleep$GENDER)
+data_with_sleep$CENTER <- as.factor(data_with_sleep$CENTER)
+data_with_sleep$BKGRD1_C7 <- as.factor(data_with_sleep$BKGRD1_C7)
+data_with_sleep$EDUCATION_C3 <- as.factor(data_with_sleep$EDUCATION_C3)
+```
+
+# Creating Insomnia Indicator Variable (Dichotomizing WHIIRS)
+
+```{r}
+data_with_sleep <- data_with_sleep %>%
+  mutate(Insomnia = case_when(WHIIRS >= 10 ~ "1",
+                              WHIIRS < 10 ~ "0")) 
+```
+
+# creating a new CESD variable that exclude sleep question
+Sum WBEA1-WBEA10, without WBEA7 ("Sleep was restless (WBEA7)"). WBEA5 and WBEA8 are positive questions -- therefore need to be recoded. 
+
+```{r CESD prep}
+wbea_cols <- paste0("WBEA", c(1:6, 8:10))
+dat_cesd <- data_with_sleep[,c("ID", wbea_cols)]
+
+for (col in wbea_cols){
+  inds_q <- which(dat_cesd[,col] == "Q")
+  if (length(inds_q) > 0){
+    dat_cesd[inds_q,col] <- NA  
+  }
+}
+
+# omg we have to do better!
+dat_cesd <- dat_cesd %>% mutate(WBEA1 = as.numeric(WBEA1),
+                    WBEA2 = as.numeric(WBEA2),
+                    WBEA3 = as.numeric(WBEA3),
+                    WBEA4 = as.numeric(WBEA4),
+                    WBEA5 = as.numeric(WBEA5),
+                    WBEA6 = as.numeric(WBEA6),
+                    WBEA8 = as.numeric(WBEA8),
+                    WBEA9 = as.numeric(WBEA9),
+                    WBEA10 = as.numeric(WBEA10))
+
+dat_cesd$WBEA5r <- 3-dat_cesd$WBEA5
+dat_cesd$WBEA8r <- 3-dat_cesd$WBEA8
+
+dat_cesd$num_items <- apply(dat_cesd[,wbea_cols], 1,
+                                          function(x){sum(!is.na(x))})
+
+# we only compute CESD to individuals with up to two missing values, i.e. with at least 7 values.
+
+print("The distribution of respnoss to CESD items excluding sleep question")
+summary(as.factor(dat_cesd$num_items))
+
+# compute CESD for everyone, then set to NA for people with missing values
+# scale to the same value range as if we had 10 items available
+dat_cesd$CESD <- (10/9)*rowSums(dat_cesd[,wbea_cols])*(9/dat_cesd$num_items)
+
+# set to NA
+dat_cesd$CESD[which(dat_cesd$num_items<7)] <- NA
+
+# merge CESD variable to the main dataset
+
+data_with_sleep <- merge(data_with_sleep, dat_cesd[,c("ID", "CESD")], by = "ID")
+
+data_with_sleep <- data_with_sleep %>%
+  dplyr::select(-WBEA1,- WBEA2, -WBEA3,
+                -WBEA4,- WBEA5, -WBEA6,
+                -WBEA7,- WBEA8, -WBEA9, -WBEA10)
+```
+
+# Adding labels etc
+```{r}
+dat <- data_with_sleep %>%
+  mutate(
+    Gender=factor(GENDER,levels = c("F","M"),labels=c("Female","Male")),
+    Education=factor(EDUCATION_C3,levels = c("1","2","3"),labels=c("<12","12",">12")),
+    Center=factor(CENTER,levels = c("B","C","M","S"),labels=c("Bronx","Chicago", "Miami", "San Diego")),
+    Income_level=factor(INCOME_C5,levels = c("1","2","3","4", "5"),labels = c("Less than $10,000","$10,001-$20,000","$20,001-$40,000","$40,001-$75,000","More than $75,000")),
+    Current_Health_insurance=factor(N_HC,levels = c("0","1"),labels = c("No","Yes")),
+    Background=factor(BKGRD1_C7,levels = c("0","1","2","3","4", "5","6"),labels = c("Domician","Central American","Cuban","Mexican","Puerto Rican","South American","More than one/Other heritage")),
+    Language_pref = factor(LANG_PREF, levels = c("1", "2"), labels = c("Spanish", "English")),
+    Marital_status=factor(MARITAL_STATUS,levels=c("1","2","3"),labels = c(
+      "Single","Married or living with a partner","Separated,divorced,or widow(er)")),
+    Employment_status=factor(EMPLOYED, levels=c("1","2","3","4"),labels = c("Retired/not currently employed","Not retired and not currently employed","Employed part-time(<=35 hours/week)","Employed full-time(>35 hours/week)")),
+    US_native=factor(US_NATIVE, levels=c("0","1"),labels = c("No","Yes")),
+    Occupation = factor(OCCUPATION_LONG, levels = c("1", "2", "3", "4", "5"), labels = c("Non-skilled worker", "Service Worker", "Skilled Worker", "Professional/technical, administrative/executive, or office staff", "Other occupation")),
+    Years_in_US = factor(YRSUS_C3, levels = c("1", "2", "3"), labels = c("Less than 10 Years", "10 Years or More", "US born")),
+    Insomnia = factor(Insomnia, levels = c("0", "1"), labels = c("No", "Yes")), 
+    Age = AGE,
+    Social_acculturation = SASH_SOC, 
+    Language_acculturation = SASH_LANG,
+    Ethnic_identity_score = ETHIS
+  )
+
+
+dat$Employment_status <- relabel(
+  dat$Employment_status,
+  "Retired/not currently employed" ="Retired/not currently employed",
+  "Not retired and not currently employed"="Retired/not currently employed"
+)
+
+```
+
+# Creating a missing values plot
+```{r}
+# variables of interest (not including center, age, gender, 
+#   which have no missing values are are considered "baseline" variables)
+vars <-  c("Marital_status",
+            "Income_level",
+            "Employment_status",
+            "Occupation",
+            "Language_pref",
+            "US_native",
+            "Language_acculturation",
+            "Social_acculturation",
+            "Ethnic_identity_score", 
+            "Current_Health_insurance", 
+            "Years_in_US",
+            "Background", 
+            "Education",
+            "STAI10",
+            "CESD",
+            "Insomnia", 
+            "WHIIRS")
+
+pdf(file = file.path(folder_path, "Results", "Missing_upset_plot.pdf"), height = 10, width = 10)
+gg_miss_upset(dat[,vars], nsets = length(vars))
+dev.off()
+
+gg_miss_upset(dat[,vars], nsets = length(vars))
+```
+# Save data set (with missing data) 
+
+```{r}
+req_vars <- c("ID", "STRAT", "PSU_ID", "WEIGHT_FINAL_NORM_OVERALL", 
+              "Center", "Age", "Gender")
+
+dat_to_save <- dat[,c(req_vars, vars)]
+saveRDS(dat_to_save, file = file.path(folder_path, "Data/Data_with_miss.Rds"))
+```
+
+
+
+```{r}
+sessionInfo()
+```

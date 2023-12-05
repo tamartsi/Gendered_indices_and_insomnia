@@ -1,0 +1,99 @@
+---
+title: "Imputing data for secondary analysis"
+output: 
+  html_document:
+    toc: true
+    keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r loading packages}
+library(tidyverse)
+library(survey)
+library(plyr)
+library(dplyr)
+library(factoextra)
+library(labelled)
+library(tableone)
+library(memisc)
+library(sjlabelled)
+library(mi)
+library(boot)
+library(glmnet)
+library(mice)
+library(UpSetR)
+library(naniar)
+```
+
+# Read in the data
+
+```{r}
+folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gender_measure"
+data_with_sleep <- read_csv(file.path(folder_path, "Data/sol_sofer_sorajja_joon_covariates_20220810.csv"))
+
+
+# load the prepared dataset
+dat <- readRDS(file.path(folder_path, "Data/Data_with_miss.Rds"))
+
+```
+
+# Variables of interest (for analysis and imputation)
+```{r}
+# variables to impute or use in imputation
+vars <-  c("Center", 
+           "Age", 
+           "Gender",
+           "STRAT",
+            "Marital_status",
+            "Income_level",
+            "Employment_status",
+            "Occupation",
+            "Language_pref",
+            "US_native",
+            "Language_acculturation",
+            "Social_acculturation",
+            "Ethnic_identity_score", 
+            "Current_Health_insurance", 
+            "Years_in_US",
+            "Background", 
+            "Education",
+            "STAI10",
+            "CESD",
+            "Insomnia", 
+            "WHIIRS")
+```
+# Impute using MICE
+```{r}
+set.seed(800)
+
+  
+imputedat <- dat[,c("ID", vars)]
+
+cl <- parallel::makeCluster(5, setup_strategy = "sequential")
+## Revert to 'sequential' setup of PSOCK cluster in RStudio Console on macOS and R 4.0.0
+if (Sys.getenv("RSTUDIO") == "1" && !nzchar(Sys.getenv("RSTUDIO_TERM")) &&
+    Sys.info()["sysname"] == "Darwin" && getRversion() >= "4.0.0") {
+  parallel:::setDefaultClusterOptions(setup_strategy = "sequential")
+}
+
+mdf <- missing_data.frame(imputedat)
+mdf1 <- mi(mdf)
+saveRDS(mdf1, file.path(folder_path, "Data/Data_imputed_S4.Rds"))
+
+imputed_data <- as.data.frame(mi:::complete(mdf1,m=5))
+saveRDS(imputed_data, file.path(folder_path, "Data/Data_imputed.Rds"))
+
+
+```
+
+
+
+
+
+
+```{r}
+sessionInfo()
+```
