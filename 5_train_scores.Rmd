@@ -1,0 +1,149 @@
+---
+title: "Train gendered indices over the complete data"
+output: 
+  html_document:
+    toc: true
+    keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r loading packages}
+library(tidyverse)
+library(survey)
+library(plyr)
+library(dplyr)
+library(factoextra)
+library(labelled)
+library(memisc)
+library(sjlabelled)
+library(boot)
+library(glmnet)
+library(UpSetR)
+library(naniar)
+library(RColorBrewer)
+library(jtools)
+library(reshape2)
+```
+
+# Load the dataset
+
+```{r}
+folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gender_measure"
+data_with_sleep <- read_csv(file.path(folder_path, "Data/sol_sofer_sorajja_joon_covariates_20220810.csv"))
+
+# load the prepared dataset
+dat <- readRDS(file.path(folder_path, "Data/Data_with_miss.Rds"))
+```
+
+# Train the two indices
+Primary genedered index: does not include psychological variables. Secondary gendered index: includes also trait anxiety scale and trait depression scale (without the sleep-related item).
+
+
+
+```{r}
+# Use only complete data in primary analysis
+dat_cc <- dat[complete.cases(dat),]
+
+# define the model matrix for the primary index 
+X_primary <- model.matrix(Gender ~
+                    Marital_status +
+                    Income_level + 
+                    Employment_status + 
+                    Occupation + 
+                    Education + 
+                    Current_Health_insurance + 
+                    Language_pref + 
+                    Language_acculturation + 
+                    Social_acculturation + 
+                    Ethnic_identity_score + 
+                    Years_in_US, dat_cc)[,-1]
+
+
+
+X_secondary <- model.matrix(Gender ~
+                    Marital_status +
+                    Income_level + 
+                    Employment_status + 
+                    Occupation + 
+                    Education + 
+                    Current_Health_insurance + 
+                    Language_pref + 
+                    Language_acculturation + 
+                    Social_acculturation + 
+                    Ethnic_identity_score + 
+                    Years_in_US + 
+                    STAI10 + 
+                    CESD, dat_cc)[,-1]
+
+# primary index
+set.seed(929)
+cv_lasso_primary <- cv.glmnet(X_primary, dat_cc$Gender, alpha = 1, family = "binomial", nfolds = 5)
+
+# use the lambda that resulted in minimum CVM to refit the model
+
+set.seed(929)
+lasso_model_primary <- glmnet(X_primary, dat_cc$Gender, family = "binomial", alpha = 1, lambda = cv_lasso_primary$lambda.min)
+primary_index <- lasso_model_primary %>% predict(newx = X_primary)
+
+# secondary index
+cv_lasso_secondary <- cv.glmnet(X_secondary, dat_cc$Gender, alpha = 1, family = "binomial", nfolds = 5)
+
+# use the lambda that resulted in minimum CVM to refit the model
+
+set.seed(929)
+lasso_model_secondary <- glmnet(X_secondary, dat_cc$Gender, family = "binomial", alpha = 1, lambda = cv_lasso_secondary$lambda.min)
+secondary_index <- lasso_model_secondary %>% predict(newx = X_secondary)
+
+## add to the dataset
+dat_cc$Primary_index  <- primary_index
+dat_cc$Secondary_index  <- secondary_index
+
+# save the dataset
+saveRDS(dat_cc, file.path(folder_path, "Data/Data_complete_case_with_indices.Rds"))
+```
+
+# Summarize the results
+## Create table 3: coefficients of the indices
+
+```{r}
+# check
+all(rownames(lasso_model_secondary$beta)[1:(ncol(X_secondary)-2)] == rownames(lasso_model_primary$beta)) # TRUE
+
+coef_primary <- c(lasso_model_primary$beta[,1], rep(NA, 2))
+coef_secondary <- c(lasso_model_secondary$beta[,1])
+table3 <- data.frame(Variable = colnames(X_secondary), 
+                     Coef_primary = round(coef_primary,2 ),
+                     Coef_secondary = round(coef_secondary,2 ))
+
+write.csv(table3, file = file.path(folder_path, "Results/Indices_coefs.csv"))
+```
+
+## Creat figure 2: index distributions by gender
+We are not standardizing them at this point, because it does not matter. 
+
+```{r}
+dat_cc$Sex <- dat_cc$Gender
+for_plot <- pivot_longer(dat_cc, 
+                         cols = c("Primary_index", "Secondary_index"), 
+                         names_to = "Index_type", 
+                         values_to = "Index")
+
+p <- ggplot(for_plot, aes(x = Index)) + 
+    geom_histogram(aes(fill = Sex), alpha = 0.6, position = "identity") +
+    ggtitle("Histogram of indices stratitifed by sex") + 
+    theme_bw() + 
+    scale_fill_brewer(palette="Dark2") + 
+    xlab("Index value") + ylab("Count") 
+
+p + facet_wrap(~Index_type)
+
+ggsave(file = file.path(folder_path, "Results/Indices_histograms.pdf"), 
+       width = 6, height = 2.7)
+```
+
+```{r}
+sessionInfo()
+```

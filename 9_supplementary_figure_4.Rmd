@@ -1,0 +1,99 @@
+---
+title: "Prepare supplementary figure 4"
+output: 
+  html_document:
+    toc: true
+    keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r loading packages}
+library(tidyverse)
+library(survey)
+library(plyr)
+library(dplyr)
+library(factoextra)
+library(labelled)
+library(corrplot)
+```
+
+# Read in the data
+
+```{r}
+folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gender_measure"
+
+# load the prepared dataset
+dat <- readRDS(file.path(folder_path, "Data/Data_with_miss.Rds"))
+
+```
+# Select only variables we want for PC plot
+
+```{r}
+
+survey_obj <- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=dat)
+
+survy_obj_f <- subset(survey_obj,  Gender == "Female")
+survy_obj_m <- subset(survey_obj,  Gender == "Male")
+
+
+# variables for PC plot:
+
+vars <-  c("Marital_status",
+            "Income_level",
+            "Employment_status",
+            "Occupation",
+            "Language_pref",
+            "Language_acculturation", 
+            "Social_acculturation", 
+            "Ethnic_identity_score", 
+            "Current_Health_insurance", 
+            "Years_in_US",
+            "Background", 
+            "Education",
+            "STAI10",
+            "CESD")
+
+
+pc_f <- svyprcomp(as.formula(paste0("~", 
+                                  paste0(vars, collapse = "+"))),
+                          design=survy_obj_f,scale=TRUE,scores=TRUE)
+
+pc_m <- svyprcomp(as.formula(paste0("~", 
+                                  paste0(vars, collapse = "+"))),
+                          design=survy_obj_m,scale=TRUE,scores=TRUE)
+```
+
+# Extract loadings of PC 1 and make a figure
+
+```{r}
+male_loadings_1 <- get_pca_var(pc_m)$coord[,1]
+female_loadings_1 <- get_pca_var(pc_f)$coord[,1]
+
+all_loadings_1 <- cbind(male_loadings_1, female_loadings_1)
+colnames(all_loadings_1) <- c("Males", "Females")
+
+# because PCs can be rotated, if the correlation between the males
+# and females loadings are negative we multiply it by -1:
+cor_m_f_loading <- cor(male_loadings_1, female_loadings_1)
+if (cor_m_f_loading < 0){
+  all_loadings_1[,2] <- -all_loadings_1[,2] 
+}
+
+pdf(file = file.path(folder_path, "Results/PCA_loadings_1_male_v_female.pdf"),
+       width = 12, height = 10 )
+corrplot(all_loadings_1, 
+         method = "shade", 
+         addCoef.col = 'black', 
+         tl.col = 'black', 
+         cl.pos = 'n', 
+         number.cex = 0.7)
+dev.off()
+
+```
+
+```{r}
+sessionInfo()
+```

@@ -1,0 +1,162 @@
+---
+title: "Secondary analysis: independent data split to validate gender/sex association"
+output: 
+  html_document:
+    toc: true
+    keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r loading packages}
+library(tidyverse)
+library(survey)
+library(plyr)
+library(dplyr)
+library(factoextra)
+library(labelled)
+library(memisc)
+library(sjlabelled)
+library(boot)
+library(glmnet)
+library(UpSetR)
+library(naniar)
+library(RColorBrewer)
+library(jtools)
+library(reshape2)
+```
+Here we create gendered indices using ~70% of the data and then evaluate them on the remaining 30% of the data, to check whether the trained indices are still distribute differently between males and females in an independent dataset.
+
+When we split the data, we split by PSU, because individuals within the same PSU may be somewhat correlated to each other. 
+
+
+# Load the dataset
+
+```{r}
+folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gender_measure"
+data_with_sleep <- read_csv(file.path(folder_path, "Data/sol_sofer_sorajja_joon_covariates_20220810.csv"))
+
+# load the prepared dataset
+dat <- readRDS(file.path(folder_path, "Data/Data_with_miss.Rds"))
+```
+
+# Train the two indices
+Primary genedered index: does not include psychological variables. Secondary gendered index: includes also trait anxiety scale and trait depression scale (without the sleep-related item).
+
+
+
+```{r}
+# Use only complete data in primary analysis
+dat_cc <- dat[complete.cases(dat),]
+
+# define train and test indices:
+PSU_train <- sample(unique(dat_cc$PSU_ID), 
+                    size = ceiling(0.7*length(unique(dat_cc$PSU_ID))))
+
+ID_train <- dat_cc$ID[which(dat_cc$PSU_ID %in% PSU_train)]
+ID_test <- setdiff(dat_cc$ID, ID_train)
+
+inds_train <- which(dat_cc$ID %in% ID_train)
+inds_test <- which(dat_cc$ID %in% ID_test)
+
+length(ID_train)
+length(ID_test)
+
+
+# define the model matrix for the primary index 
+X_primary <- model.matrix(Gender ~
+                    Marital_status +
+                    Income_level + 
+                    Employment_status + 
+                    Occupation + 
+                    Education + 
+                    Current_Health_insurance + 
+                    Language_pref + 
+                    Language_acculturation + 
+                    Social_acculturation + 
+                    Ethnic_identity_score + 
+                    Years_in_US, dat_cc)[,-1]
+
+X_secondary <- model.matrix(Gender ~
+                    Marital_status +
+                    Income_level + 
+                    Employment_status + 
+                    Occupation + 
+                    Education + 
+                    Current_Health_insurance + 
+                    Language_pref + 
+                    Language_acculturation + 
+                    Social_acculturation + 
+                    Ethnic_identity_score + 
+                    Years_in_US + 
+                    STAI10 + 
+                    CESD, dat_cc)[,-1]
+
+# primary index
+set.seed(929)
+cv_lasso_primary <- cv.glmnet(X_primary[inds_train,], dat_cc$Gender[inds_train], alpha = 1, family = "binomial", nfolds = 5)
+
+# use the lambda that resulted in minimum CVM to refit the model
+
+set.seed(929)
+lasso_model_primary <- glmnet(X_primary[inds_train,], 
+                              dat_cc$Gender[inds_train], 
+                              family = "binomial", 
+                              alpha = 1, 
+                              lambda = cv_lasso_primary$lambda.min)
+primary_index_test <- lasso_model_primary %>% predict(newx = X_primary[inds_test,])
+
+# secondary index
+cv_lasso_secondary <- cv.glmnet(X_secondary[inds_train,],
+                                dat_cc$Gender[inds_train], 
+                                alpha = 1, 
+                                family = "binomial", 
+                                nfolds = 5)
+
+# use the lambda that resulted in minimum CVM to refit the model
+
+set.seed(929)
+lasso_model_secondary <- glmnet(X_secondary[inds_train,], 
+                                dat_cc$Gender[inds_train], 
+                                family = "binomial", 
+                                alpha = 1, 
+                                lambda = cv_lasso_secondary$lambda.min)
+secondary_index_test <- lasso_model_secondary %>% predict(newx = X_secondary[inds_test,])
+
+## add to the dataset
+dat_test <- dat_cc[inds_test,]
+dat_test$Primary_index  <- primary_index_test
+dat_test$Secondary_index  <- secondary_index_test
+```
+
+# Summarize the results
+
+
+## Creat supplemental figure 1: index distributions by gender
+We are not standardizing them at this point, because it does not matter. 
+
+```{r}
+dat_test$Sex <- dat_test$Gender
+for_plot <- pivot_longer(dat_test, 
+                         cols = c("Primary_index", "Secondary_index"), 
+                         names_to = "Index_type", 
+                         values_to = "Index")
+
+p <- ggplot(for_plot, aes(x = Index)) + 
+    geom_histogram(aes(fill = Sex), alpha = 0.6, position = "identity") +
+    ggtitle("Histogram of indices stratitifed by sex") + 
+    theme_bw() + 
+    scale_fill_brewer(palette="Dark2") + 
+    xlab("Index value") + ylab("Count") 
+
+p + facet_wrap(~Index_type)
+
+ggsave(file = file.path(folder_path, "Results/Indices_histograms_test_set.pdf"), 
+       width = 6, height = 2.7)
+```
+
+```{r}
+sessionInfo()
+```
