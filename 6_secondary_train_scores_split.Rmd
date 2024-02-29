@@ -1,5 +1,5 @@
 ---
-title: "Secondary analysis: independent data split to validate gender/sex association"
+title: "Secondary analysis: independent data split to validate sex associations"
 output: 
   html_document:
     toc: true
@@ -27,7 +27,7 @@ library(RColorBrewer)
 library(jtools)
 library(reshape2)
 ```
-Here we create gendered indices using ~70% of the data and then evaluate them on the remaining 30% of the data, to check whether the trained indices are still distribute differently between males and females in an independent dataset.
+Here we create GISE and GIPSE using ~70% of the data and then evaluate them on the remaining 30% of the data, to check whether the trained indices are still distribute differently between males and females in an independent dataset.
 
 When we split the data, we split by PSU, because individuals within the same PSU may be somewhat correlated to each other. 
 
@@ -35,7 +35,7 @@ When we split the data, we split by PSU, because individuals within the same PSU
 # Load the dataset
 
 ```{r}
-folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gender_measure"
+folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gendered_indices"
 data_with_sleep <- read_csv(file.path(folder_path, "Data/sol_sofer_sorajja_joon_covariates_20220810.csv"))
 
 # load the prepared dataset
@@ -43,7 +43,7 @@ dat <- readRDS(file.path(folder_path, "Data/Data_with_miss.Rds"))
 ```
 
 # Train the two indices
-Primary genedered index: does not include psychological variables. Secondary gendered index: includes also trait anxiety scale and trait depression scale (without the sleep-related item).
+Primary genedered index GISE: does not include psychological variables. Secondary gendered index GIPSE: includes also trait anxiety scale and trait depression scale (without the sleep-related item).
 
 
 
@@ -65,8 +65,8 @@ length(ID_train)
 length(ID_test)
 
 
-# define the model matrix for the primary index 
-X_primary <- model.matrix(Gender ~
+# define the model matrix for the GISE 
+X_gise <- model.matrix(Sex ~
                     Marital_status +
                     Income_level + 
                     Employment_status + 
@@ -79,7 +79,7 @@ X_primary <- model.matrix(Gender ~
                     Ethnic_identity_score + 
                     Years_in_US, dat_cc)[,-1]
 
-X_secondary <- model.matrix(Gender ~
+X_gipse <- model.matrix(Sex ~
                     Marital_status +
                     Income_level + 
                     Employment_status + 
@@ -92,25 +92,25 @@ X_secondary <- model.matrix(Gender ~
                     Ethnic_identity_score + 
                     Years_in_US + 
                     STAI10 + 
-                    CESD, dat_cc)[,-1]
+                    CESD9, dat_cc)[,-1]
 
-# primary index
+# GISE
 set.seed(929)
-cv_lasso_primary <- cv.glmnet(X_primary[inds_train,], dat_cc$Gender[inds_train], alpha = 1, family = "binomial", nfolds = 5)
+cv_lasso_gise <- cv.glmnet(X_gise[inds_train,], dat_cc$Sex[inds_train], alpha = 1, family = "binomial", nfolds = 5)
 
 # use the lambda that resulted in minimum CVM to refit the model
 
 set.seed(929)
-lasso_model_primary <- glmnet(X_primary[inds_train,], 
-                              dat_cc$Gender[inds_train], 
+lasso_model_gise <- glmnet(X_gise[inds_train,], 
+                              dat_cc$Sex[inds_train], 
                               family = "binomial", 
                               alpha = 1, 
-                              lambda = cv_lasso_primary$lambda.min)
-primary_index_test <- lasso_model_primary %>% predict(newx = X_primary[inds_test,])
+                              lambda = cv_lasso_gise$lambda.min)
+gise_test <- lasso_model_gise %>% predict(newx = X_gise[inds_test,])
 
-# secondary index
-cv_lasso_secondary <- cv.glmnet(X_secondary[inds_train,],
-                                dat_cc$Gender[inds_train], 
+# GIPSE
+cv_lasso_gipse <- cv.glmnet(X_gipse[inds_train,],
+                                dat_cc$Sex[inds_train], 
                                 alpha = 1, 
                                 family = "binomial", 
                                 nfolds = 5)
@@ -118,29 +118,29 @@ cv_lasso_secondary <- cv.glmnet(X_secondary[inds_train,],
 # use the lambda that resulted in minimum CVM to refit the model
 
 set.seed(929)
-lasso_model_secondary <- glmnet(X_secondary[inds_train,], 
-                                dat_cc$Gender[inds_train], 
+lasso_model_gipse <- glmnet(X_gipse[inds_train,], 
+                                dat_cc$Sex[inds_train], 
                                 family = "binomial", 
                                 alpha = 1, 
-                                lambda = cv_lasso_secondary$lambda.min)
-secondary_index_test <- lasso_model_secondary %>% predict(newx = X_secondary[inds_test,])
+                                lambda = cv_lasso_gipse$lambda.min)
+gipse_test <- lasso_model_gipse %>% predict(newx = X_gipse[inds_test,])
 
 ## add to the dataset
 dat_test <- dat_cc[inds_test,]
-dat_test$Primary_index  <- primary_index_test
-dat_test$Secondary_index  <- secondary_index_test
+dat_test$GISE  <- gise_test
+dat_test$GIPSE  <- gipse_test
 ```
 
 # Summarize the results
 
 
-## Creat supplemental figure 1: index distributions by gender
+## Creat supplemental figure 1: index distributions by sex
 We are not standardizing them at this point, because it does not matter. 
 
 ```{r}
-dat_test$Sex <- dat_test$Gender
+dat_test$Sex <- dat_test$Sex
 for_plot <- pivot_longer(dat_test, 
-                         cols = c("Primary_index", "Secondary_index"), 
+                         cols = c("GISE", "GIPSE"), 
                          names_to = "Index_type", 
                          values_to = "Index")
 

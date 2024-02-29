@@ -31,7 +31,7 @@ library(reshape2)
 # Load and prepare the dataset
 
 ```{r}
-folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gender_measure"
+folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gendered_indices"
 dat_no_indices <- readRDS(file.path(folder_path, "Data/Data_with_miss.Rds"))
 
 # the data with missing values:
@@ -73,22 +73,22 @@ survey_imp <- svydesign(id = ~PSU_ID,
                           nest = TRUE,
                           data = dat_imp)
 
-cur_mean <- svymean(~Primary_index, survey_cc)[1]
-cur_sd <- sqrt(svyvar(~Primary_index, survey_cc)[1])
-dat_miss$Primary_index_scaled <- (dat_miss$Primary_index - cur_mean)/cur_sd
+cur_mean <- svymean(~GISE, survey_cc)[1]
+cur_sd <- sqrt(svyvar(~GISE, survey_cc)[1])
+dat_miss$GISE_scaled <- (dat_miss$GISE - cur_mean)/cur_sd
 
-cur_mean <- svymean(~Secondary_index, survey_cc)[1]
-cur_sd <- sqrt(svyvar(~Secondary_index, survey_cc)[1])
-dat_miss$Secondary_index_scaled <- (dat_miss$Secondary_index - cur_mean)/cur_sd
+cur_mean <- svymean(~GIPSE, survey_cc)[1]
+cur_sd <- sqrt(svyvar(~GIPSE, survey_cc)[1])
+dat_miss$GIPSE_scaled <- (dat_miss$GIPSE - cur_mean)/cur_sd
 
 for (suffix in c("", ".1", ".2", ".3", ".4")){
-  cur_mean <- svymean(as.formula(paste0("~Primary_index", suffix)), survey_imp)[1]
-  cur_sd <- sqrt(svyvar(as.formula(paste0("~Primary_index", suffix)), survey_imp)[1])
-  dat_imp[[paste0("Primary_index_scaled", suffix)]] <- (dat_imp[[paste0("Primary_index", suffix)]] - cur_mean)/cur_sd
+  cur_mean <- svymean(as.formula(paste0("~GISE", suffix)), survey_imp)[1]
+  cur_sd <- sqrt(svyvar(as.formula(paste0("~GISE", suffix)), survey_imp)[1])
+  dat_imp[[paste0("GISE_scaled", suffix)]] <- (dat_imp[[paste0("GISE", suffix)]] - cur_mean)/cur_sd
 
-  cur_mean <- svymean(as.formula(paste0("~Secondary_index", suffix)), survey_imp)[1]
-  cur_sd <- sqrt(svyvar(as.formula(paste0("~Secondary_index", suffix)), survey_imp)[1])
-  dat_imp[[paste0("Secondary_index_scaled", suffix)]] <- (dat_imp[[paste0("Secondary_index", suffix)]] - cur_mean)/cur_sd
+  cur_mean <- svymean(as.formula(paste0("~GIPSE", suffix)), survey_imp)[1]
+  cur_sd <- sqrt(svyvar(as.formula(paste0("~GIPSE", suffix)), survey_imp)[1])
+  dat_imp[[paste0("GIPSE_scaled", suffix)]] <- (dat_imp[[paste0("GIPSE", suffix)]] - cur_mean)/cur_sd
 }
 
 
@@ -115,9 +115,9 @@ survey_imp <- svydesign(id = ~PSU_ID,
 # Prepare model variables
 
 ```{r}
-model1 <- c("Age", "Center", "Background", "Gender")
-model2 <- c("Age", "Center", "Background", "Gender", "Primary_index_scaled")
-model3 <- c("Age", "Center", "Background", "Gender", "Secondary_index_scaled")
+model1 <- c("Age", "Center", "Background", "Sex")
+model2 <- c("Age", "Center", "Background", "Sex", "GISE_scaled")
+model3 <- c("Age", "Center", "Background", "Sex", "GIPSE_scaled")
 
 # models 4 and 5 include components of the primary and secondary indices:
 model4 <- c(model1, "Marital_status",
@@ -131,11 +131,11 @@ model4 <- c(model1, "Marital_status",
                     "Social_acculturation", 
                     "Ethnic_identity_score", 
                     "Years_in_US")
-model5 <- c(model4, c("CESD", "STAI10"))
+model5 <- c(model4, c("CESD9", "STAI10"))
 
 # for stratified model
-model2_sex_strat <- setdiff(model2,  "Gender")
-model3_sex_strat <-  setdiff(model3,  "Gender")
+model2_sex_strat <- setdiff(model2,  "Sex")
+model3_sex_strat <-  setdiff(model3,  "Sex")
 
 
 ```
@@ -187,22 +187,22 @@ for (i in 1:5){
   table4[paste0("all_model_", i), 
          c("male_eff", "male_CI", "male_pval")] <- 
              extract_one_exp(get(paste0("model", i, "_fit")) , 
-                                 exposure = "Gender")[c("est", "CI", "pval")]
+                                 exposure = "Sex")[c("est", "CI", "pval")]
 }
 
 table4["all_model_2",
        c("index_eff", "index_CI",  "index_pval")]  <- 
           extract_one_exp(get(paste0("model2_fit")) , 
-                                 exposure = "Primary_index_scaled")[c("est", "CI", "pval")]
+                                 exposure = "GISE_scaled")[c("est", "CI", "pval")]
 
 table4["all_model_3",
        c("index_eff", "index_CI", "index_pval")]  <- 
           extract_one_exp(get(paste0("model3_fit")) , 
-                                 exposure = "Secondary_index_scaled")[c("est", "CI", "pval")]
+                                 exposure = "GIPSE_scaled")[c("est", "CI", "pval")]
 
 
-survey_cc_male <- subset(survey_cc, Gender == "Male")
-survey_cc_female <- subset(survey_cc, Gender == "Female")
+survey_cc_male <- subset(survey_cc, Sex == "Male")
+survey_cc_female <- subset(survey_cc, Sex == "Female")
 
 model2_male_fit <- svyglm(formula = as.formula(paste0("Insomnia~", paste(model2_sex_strat, collapse = "+"))), design = survey_cc_male, family = quasibinomial())
 
@@ -214,11 +214,11 @@ model3_female_fit <- svyglm(formula = as.formula(paste0("Insomnia~", paste(model
 
 for (i in 2:3){
   for (sex in c("male", "female")){
-    type <- ifelse(i == 2, "Primary", "Secondary")
+    type <- ifelse(i == 2, "GISE", "GIPSE")
       table4[paste0(sex, "_model_", i), 
          c("index_eff", "index_CI", "index_pval")]  <- 
           extract_one_exp(get(paste0("model", i, "_", sex, "_fit")) , 
-                                 exposure = paste0(type, "_index_scaled"))[c("est", "CI", "pval")]
+                                 exposure = paste0(type, "_scaled"))[c("est", "CI", "pval")]
     
   }
 
@@ -318,38 +318,38 @@ table4_imp <- data.frame(row.names = c(paste0("all_model_",1:5 ),
                      index_pval = NA)
 
 
-table4_imp["all_model_1", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model1, "Gender")[, c("est", "CI", "pval")]
+table4_imp["all_model_1", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model1, "Sex")[, c("est", "CI", "pval")]
 
-table4_imp["all_model_2", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model2, "Gender")[, c("est", "CI", "pval")]
+table4_imp["all_model_2", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model2, "Sex")[, c("est", "CI", "pval")]
 
-table4_imp["all_model_2", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp, model2, "Primary_index_scaled")[, c("est", "CI", "pval")]
+table4_imp["all_model_2", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp, model2, "GISE_scaled")[, c("est", "CI", "pval")]
 
-table4_imp["all_model_3", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model3, "Gender")[, c("est", "CI", "pval")]
+table4_imp["all_model_3", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model3, "Sex")[, c("est", "CI", "pval")]
 
-table4_imp["all_model_3", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp, model3, "Secondary_index_scaled")[, c("est", "CI", "pval")]
-
-
-table4_imp["all_model_4", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model4, "Gender")[, c("est", "CI", "pval")]
-
-table4_imp["all_model_5", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model5, "Gender")[, c("est", "CI", "pval")]
+table4_imp["all_model_3", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp, model3, "GIPSE_scaled")[, c("est", "CI", "pval")]
 
 
+table4_imp["all_model_4", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model4, "Sex")[, c("est", "CI", "pval")]
 
-survey_imp_male <- subset(survey_imp, Gender == "Male")
-survey_imp_female <- subset(survey_imp, Gender == "Female")
+table4_imp["all_model_5", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model5, "Sex")[, c("est", "CI", "pval")]
 
 
 
-table4_imp["male_model_2", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_male, setdiff(model2, "Gender"), "Primary_index_scaled")[, c("est", "CI", "pval")]
+survey_imp_male <- subset(survey_imp, Sex == "Male")
+survey_imp_female <- subset(survey_imp, Sex == "Female")
 
 
-table4_imp["male_model_3", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_male, setdiff(model3, "Gender"), "Secondary_index_scaled")[, c("est", "CI", "pval")]
+
+table4_imp["male_model_2", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_male, setdiff(model2, "Sex"), "GISE_scaled")[, c("est", "CI", "pval")]
 
 
-table4_imp["female_model_2", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_female, setdiff(model2, "Gender"), "Primary_index_scaled")[, c("est", "CI", "pval")]
+table4_imp["male_model_3", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_male, setdiff(model3, "Sex"), "GIPSE_scaled")[, c("est", "CI", "pval")]
 
 
-table4_imp["female_model_3", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_female, setdiff(model3, "Gender"), "Secondary_index_scaled")[, c("est", "CI", "pval")]
+table4_imp["female_model_2", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_female, setdiff(model2, "Sex"), "GISE_scaled")[, c("est", "CI", "pval")]
+
+
+table4_imp["female_model_3", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_female, setdiff(model3, "Sex"), "GIPSE_scaled")[, c("est", "CI", "pval")]
 
 table4_imp
 

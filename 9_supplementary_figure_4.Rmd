@@ -23,7 +23,7 @@ library(corrplot)
 # Read in the data
 
 ```{r}
-folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gender_measure"
+folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gendered_indices"
 
 # load the prepared dataset
 dat <- readRDS(file.path(folder_path, "Data/Data_with_miss.Rds"))
@@ -35,8 +35,8 @@ dat <- readRDS(file.path(folder_path, "Data/Data_with_miss.Rds"))
 
 survey_obj <- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=dat)
 
-survy_obj_f <- subset(survey_obj,  Gender == "Female")
-survy_obj_m <- subset(survey_obj,  Gender == "Male")
+survy_obj_f <- subset(survey_obj,  Sex == "Female")
+survy_obj_m <- subset(survey_obj,  Sex == "Male")
 
 
 # variables for PC plot:
@@ -54,7 +54,7 @@ vars <-  c("Marital_status",
             "Background", 
             "Education",
             "STAI10",
-            "CESD")
+            "CESD9")
 
 
 pc_f <- svyprcomp(as.formula(paste0("~", 

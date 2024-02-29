@@ -231,7 +231,7 @@ library(reshape2)
 
 
 ```r
-folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gender_measure"
+folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gendered_indices"
 dat_no_indices <- readRDS(file.path(folder_path, "Data/Data_with_miss.Rds"))
 
 # the data with missing values:
@@ -291,22 +291,22 @@ survey_imp <- svydesign(id = ~PSU_ID,
                           nest = TRUE,
                           data = dat_imp)
 
-cur_mean <- svymean(~Primary_index, survey_cc)[1]
-cur_sd <- sqrt(svyvar(~Primary_index, survey_cc)[1])
-dat_miss$Primary_index_scaled <- (dat_miss$Primary_index - cur_mean)/cur_sd
+cur_mean <- svymean(~GISE, survey_cc)[1]
+cur_sd <- sqrt(svyvar(~GISE, survey_cc)[1])
+dat_miss$GISE_scaled <- (dat_miss$GISE - cur_mean)/cur_sd
 
-cur_mean <- svymean(~Secondary_index, survey_cc)[1]
-cur_sd <- sqrt(svyvar(~Secondary_index, survey_cc)[1])
-dat_miss$Secondary_index_scaled <- (dat_miss$Secondary_index - cur_mean)/cur_sd
+cur_mean <- svymean(~GIPSE, survey_cc)[1]
+cur_sd <- sqrt(svyvar(~GIPSE, survey_cc)[1])
+dat_miss$GIPSE_scaled <- (dat_miss$GIPSE - cur_mean)/cur_sd
 
 for (suffix in c("", ".1", ".2", ".3", ".4")){
-  cur_mean <- svymean(as.formula(paste0("~Primary_index", suffix)), survey_imp)[1]
-  cur_sd <- sqrt(svyvar(as.formula(paste0("~Primary_index", suffix)), survey_imp)[1])
-  dat_imp[[paste0("Primary_index_scaled", suffix)]] <- (dat_imp[[paste0("Primary_index", suffix)]] - cur_mean)/cur_sd
+  cur_mean <- svymean(as.formula(paste0("~GISE", suffix)), survey_imp)[1]
+  cur_sd <- sqrt(svyvar(as.formula(paste0("~GISE", suffix)), survey_imp)[1])
+  dat_imp[[paste0("GISE_scaled", suffix)]] <- (dat_imp[[paste0("GISE", suffix)]] - cur_mean)/cur_sd
 
-  cur_mean <- svymean(as.formula(paste0("~Secondary_index", suffix)), survey_imp)[1]
-  cur_sd <- sqrt(svyvar(as.formula(paste0("~Secondary_index", suffix)), survey_imp)[1])
-  dat_imp[[paste0("Secondary_index_scaled", suffix)]] <- (dat_imp[[paste0("Secondary_index", suffix)]] - cur_mean)/cur_sd
+  cur_mean <- svymean(as.formula(paste0("~GIPSE", suffix)), survey_imp)[1]
+  cur_sd <- sqrt(svyvar(as.formula(paste0("~GIPSE", suffix)), survey_imp)[1])
+  dat_imp[[paste0("GIPSE_scaled", suffix)]] <- (dat_imp[[paste0("GIPSE", suffix)]] - cur_mean)/cur_sd
 }
 
 
@@ -332,9 +332,9 @@ survey_imp <- svydesign(id = ~PSU_ID,
 
 
 ```r
-model1 <- c("Age", "Center", "Background", "Gender")
-model2 <- c("Age", "Center", "Background", "Gender", "Primary_index_scaled")
-model3 <- c("Age", "Center", "Background", "Gender", "Secondary_index_scaled")
+model1 <- c("Age", "Center", "Background", "Sex")
+model2 <- c("Age", "Center", "Background", "Sex", "GISE_scaled")
+model3 <- c("Age", "Center", "Background", "Sex", "GIPSE_scaled")
 
 # models 4 and 5 include components of the primary and secondary indices:
 model4 <- c(model1, "Marital_status",
@@ -348,11 +348,11 @@ model4 <- c(model1, "Marital_status",
                     "Social_acculturation", 
                     "Ethnic_identity_score", 
                     "Years_in_US")
-model5 <- c(model4, c("CESD", "STAI10"))
+model5 <- c(model4, c("CESD9", "STAI10"))
 
 # for stratified model
-model2_sex_strat <- setdiff(model2,  "Gender")
-model3_sex_strat <-  setdiff(model3,  "Gender")
+model2_sex_strat <- setdiff(model2,  "Sex")
+model3_sex_strat <-  setdiff(model3,  "Sex")
 ```
 
 # prepare table 4: evaluate models
@@ -402,22 +402,22 @@ for (i in 1:5){
   table4[paste0("all_model_", i), 
          c("male_eff", "male_CI", "male_pval")] <- 
              extract_one_exp(get(paste0("model", i, "_fit")) , 
-                                 exposure = "Gender")[c("est", "CI", "pval")]
+                                 exposure = "Sex")[c("est", "CI", "pval")]
 }
 
 table4["all_model_2",
        c("index_eff", "index_CI",  "index_pval")]  <- 
           extract_one_exp(get(paste0("model2_fit")) , 
-                                 exposure = "Primary_index_scaled")[c("est", "CI", "pval")]
+                                 exposure = "GISE_scaled")[c("est", "CI", "pval")]
 
 table4["all_model_3",
        c("index_eff", "index_CI", "index_pval")]  <- 
           extract_one_exp(get(paste0("model3_fit")) , 
-                                 exposure = "Secondary_index_scaled")[c("est", "CI", "pval")]
+                                 exposure = "GIPSE_scaled")[c("est", "CI", "pval")]
 
 
-survey_cc_male <- subset(survey_cc, Gender == "Male")
-survey_cc_female <- subset(survey_cc, Gender == "Female")
+survey_cc_male <- subset(survey_cc, Sex == "Male")
+survey_cc_female <- subset(survey_cc, Sex == "Female")
 
 model2_male_fit <- svyglm(formula = as.formula(paste0("Insomnia~", paste(model2_sex_strat, collapse = "+"))), design = survey_cc_male, family = quasibinomial())
 
@@ -429,11 +429,11 @@ model3_female_fit <- svyglm(formula = as.formula(paste0("Insomnia~", paste(model
 
 for (i in 2:3){
   for (sex in c("male", "female")){
-    type <- ifelse(i == 2, "Primary", "Secondary")
+    type <- ifelse(i == 2, "GISE", "GIPSE")
       table4[paste0(sex, "_model_", i), 
          c("index_eff", "index_CI", "index_pval")]  <- 
           extract_one_exp(get(paste0("model", i, "_", sex, "_fit")) , 
-                                 exposure = paste0(type, "_index_scaled"))[c("est", "CI", "pval")]
+                                 exposure = paste0(type, "_scaled"))[c("est", "CI", "pval")]
     
   }
 
@@ -543,53 +543,53 @@ table4_imp <- data.frame(row.names = c(paste0("all_model_",1:5 ),
                      index_pval = NA)
 
 
-table4_imp["all_model_1", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model1, "Gender")[, c("est", "CI", "pval")]
+table4_imp["all_model_1", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model1, "Sex")[, c("est", "CI", "pval")]
 
-table4_imp["all_model_2", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model2, "Gender")[, c("est", "CI", "pval")]
+table4_imp["all_model_2", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model2, "Sex")[, c("est", "CI", "pval")]
 
-table4_imp["all_model_2", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp, model2, "Primary_index_scaled")[, c("est", "CI", "pval")]
+table4_imp["all_model_2", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp, model2, "GISE_scaled")[, c("est", "CI", "pval")]
 
-table4_imp["all_model_3", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model3, "Gender")[, c("est", "CI", "pval")]
+table4_imp["all_model_3", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model3, "Sex")[, c("est", "CI", "pval")]
 
-table4_imp["all_model_3", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp, model3, "Secondary_index_scaled")[, c("est", "CI", "pval")]
-
-
-table4_imp["all_model_4", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model4, "Gender")[, c("est", "CI", "pval")]
-
-table4_imp["all_model_5", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model5, "Gender")[, c("est", "CI", "pval")]
+table4_imp["all_model_3", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp, model3, "GIPSE_scaled")[, c("est", "CI", "pval")]
 
 
+table4_imp["all_model_4", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model4, "Sex")[, c("est", "CI", "pval")]
 
-survey_imp_male <- subset(survey_imp, Gender == "Male")
-survey_imp_female <- subset(survey_imp, Gender == "Female")
+table4_imp["all_model_5", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model5, "Sex")[, c("est", "CI", "pval")]
 
 
 
-table4_imp["male_model_2", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_male, setdiff(model2, "Gender"), "Primary_index_scaled")[, c("est", "CI", "pval")]
+survey_imp_male <- subset(survey_imp, Sex == "Male")
+survey_imp_female <- subset(survey_imp, Sex == "Female")
 
 
-table4_imp["male_model_3", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_male, setdiff(model3, "Gender"), "Secondary_index_scaled")[, c("est", "CI", "pval")]
+
+table4_imp["male_model_2", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_male, setdiff(model2, "Sex"), "GISE_scaled")[, c("est", "CI", "pval")]
 
 
-table4_imp["female_model_2", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_female, setdiff(model2, "Gender"), "Primary_index_scaled")[, c("est", "CI", "pval")]
+table4_imp["male_model_3", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_male, setdiff(model3, "Sex"), "GIPSE_scaled")[, c("est", "CI", "pval")]
 
 
-table4_imp["female_model_3", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_female, setdiff(model3, "Gender"), "Secondary_index_scaled")[, c("est", "CI", "pval")]
+table4_imp["female_model_2", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_female, setdiff(model2, "Sex"), "GISE_scaled")[, c("est", "CI", "pval")]
+
+
+table4_imp["female_model_3", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_female, setdiff(model3, "Sex"), "GIPSE_scaled")[, c("est", "CI", "pval")]
 
 table4_imp
 ```
 
 ```
 ##                male_eff  male_95_CI male_pval index_eff index_95_CI index_pval
-## all_model_1        0.61 (0.55,0.68)  9.52E-20        NA        <NA>       <NA>
-## all_model_2        0.64 (0.57,0.71)  1.85E-16      0.93 (0.88,0.99)   2.10E-02
-## all_model_3        0.80 (0.71,0.89)  5.02E-05      0.65 (0.62,0.69)   3.19E-45
-## all_model_4        0.63  (0.57,0.7)  2.05E-16        NA        <NA>       <NA>
-## all_model_5        0.75 (0.67,0.85)  2.57E-06        NA        <NA>       <NA>
-## male_model_2         NA        <NA>      <NA>      0.94 (0.86,1.03)   2.00E-01
-## male_model_3         NA        <NA>      <NA>      0.68 (0.62,0.75)   2.21E-16
-## female_model_2       NA        <NA>      <NA>      0.92    (0.86,1)   3.89E-02
-## female_model_3       NA        <NA>      <NA>      0.63 (0.59,0.68)   4.58E-32
+## all_model_1        0.61 (0.55,0.68)  7.32E-20        NA        <NA>       <NA>
+## all_model_2        0.63 (0.57,0.71)  1.71E-16      0.93 (0.88,0.99)   1.62E-02
+## all_model_3        0.79 (0.71,0.89)  4.85E-05      0.65 (0.61,0.69)   3.35E-46
+## all_model_4        0.63  (0.56,0.7)  1.45E-16        NA        <NA>       <NA>
+## all_model_5        0.75 (0.66,0.84)  2.15E-06        NA        <NA>       <NA>
+## male_model_2         NA        <NA>      <NA>      0.94 (0.86,1.03)   1.94E-01
+## male_model_3         NA        <NA>      <NA>      0.68 (0.62,0.75)   3.82E-16
+## female_model_2       NA        <NA>      <NA>      0.92 (0.85,0.99)   3.03E-02
+## female_model_3       NA        <NA>      <NA>      0.63 (0.58,0.68)   4.13E-33
 ```
 
 ```r
@@ -604,7 +604,7 @@ sessionInfo()
 ```
 ## R version 4.2.3 (2023-03-15)
 ## Platform: aarch64-apple-darwin20 (64-bit)
-## Running under: macOS Ventura 13.3.1
+## Running under: macOS Ventura 13.6
 ## 
 ## Matrix products: default
 ## BLAS:   /Library/Frameworks/R.framework/Versions/4.2-arm64/Resources/lib/libRblas.0.dylib
@@ -618,28 +618,28 @@ sessionInfo()
 ## [8] base     
 ## 
 ## other attached packages:
-##  [1] reshape2_1.4.4     jtools_2.2.1       RColorBrewer_1.1-3 naniar_1.0.0      
+##  [1] reshape2_1.4.4     jtools_2.2.2       RColorBrewer_1.1-3 naniar_1.0.0      
 ##  [5] UpSetR_1.4.0       glmnet_4.1-7       boot_1.3-28.1      sjlabelled_1.2.0  
-##  [9] memisc_0.99.31.6   MASS_7.3-58.2      lattice_0.20-45    labelled_2.11.0   
-## [13] factoextra_1.0.7   plyr_1.8.8         survey_4.2-1       survival_3.5-3    
-## [17] Matrix_1.5-3       lubridate_1.9.2    forcats_1.0.0      stringr_1.5.0     
+##  [9] memisc_0.99.31.6   MASS_7.3-60        lattice_0.21-8     labelled_2.12.0   
+## [13] factoextra_1.0.7   plyr_1.8.8         survey_4.2-1       survival_3.5-5    
+## [17] Matrix_1.5-4.1     lubridate_1.9.2    forcats_1.0.0      stringr_1.5.0     
 ## [21] dplyr_1.1.2        purrr_1.0.1        readr_2.1.4        tidyr_1.3.0       
 ## [25] tibble_3.2.1       ggplot2_3.4.2      tidyverse_2.0.0   
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] ggrepel_0.9.3     Rcpp_1.0.10       foreach_1.5.2     digest_0.6.31    
+##  [1] ggrepel_0.9.3     Rcpp_1.0.11       foreach_1.5.2     digest_0.6.33    
 ##  [5] utf8_1.2.3        R6_2.5.1          visdat_0.6.0      evaluate_0.21    
-##  [9] pillar_1.9.0      rlang_1.1.1       rstudioapi_0.14   data.table_1.14.8
-## [13] car_3.1-2         jquerylib_0.1.4   rmarkdown_2.21    splines_4.2.3    
+##  [9] pillar_1.9.0      rlang_1.1.1       rstudioapi_0.15.0 data.table_1.14.8
+## [13] car_3.1-2         jquerylib_0.1.4   rmarkdown_2.23    splines_4.2.3    
 ## [17] pander_0.6.5      munsell_0.5.0     compiler_4.2.3    xfun_0.39        
 ## [21] pkgconfig_2.0.3   shape_1.4.6       htmltools_0.5.5   mitools_2.4      
-## [25] insight_0.19.2    tidyselect_1.2.0  gridExtra_2.3     codetools_0.2-19 
+## [25] insight_0.19.3    tidyselect_1.2.0  gridExtra_2.3     codetools_0.2-19 
 ## [29] fansi_1.0.4       crayon_1.5.2      tzdb_0.4.0        withr_2.5.0      
-## [33] jsonlite_1.8.4    gtable_0.3.3      lifecycle_1.0.3   DBI_1.1.3        
+## [33] jsonlite_1.8.7    gtable_0.3.3      lifecycle_1.0.3   DBI_1.1.3        
 ## [37] magrittr_2.0.3    scales_1.2.1      cli_3.6.1         stringi_1.7.12   
-## [41] cachem_1.0.8      carData_3.0-5     bslib_0.4.2       generics_0.1.3   
-## [45] vctrs_0.6.2       iterators_1.0.14  tools_4.2.3       glue_1.6.2       
+## [41] cachem_1.0.8      carData_3.0-5     bslib_0.5.0       generics_0.1.3   
+## [45] vctrs_0.6.3       iterators_1.0.14  tools_4.2.3       glue_1.6.2       
 ## [49] hms_1.1.3         abind_1.4-5       fastmap_1.1.1     yaml_2.3.7       
-## [53] timechange_0.2.0  colorspace_2.1-0  knitr_1.42        haven_2.5.2      
-## [57] sass_0.4.6
+## [53] timechange_0.2.0  colorspace_2.1-0  knitr_1.43        haven_2.5.3      
+## [57] sass_0.4.7
 ```

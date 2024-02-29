@@ -94,7 +94,7 @@ library(corrplot)
 
 
 ```r
-folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gender_measure"
+folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gendered_indices"
 
 # load the prepared dataset
 dat <- readRDS(file.path(folder_path, "Data/Data_with_miss.Rds"))
@@ -105,8 +105,8 @@ dat <- readRDS(file.path(folder_path, "Data/Data_with_miss.Rds"))
 ```r
 survey_obj <- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=dat)
 
-survy_obj_f <- subset(survey_obj,  Gender == "Female")
-survy_obj_m <- subset(survey_obj,  Gender == "Male")
+survy_obj_f <- subset(survey_obj,  Sex == "Female")
+survy_obj_m <- subset(survey_obj,  Sex == "Male")
 
 
 # variables for PC plot:
@@ -124,7 +124,7 @@ vars <-  c("Marital_status",
             "Background", 
             "Education",
             "STAI10",
-            "CESD")
+            "CESD9")
 
 
 pc_f <- svyprcomp(as.formula(paste0("~", 
@@ -177,7 +177,7 @@ sessionInfo()
 ```
 ## R version 4.2.3 (2023-03-15)
 ## Platform: aarch64-apple-darwin20 (64-bit)
-## Running under: macOS Ventura 13.3.1
+## Running under: macOS Ventura 13.6
 ## 
 ## Matrix products: default
 ## BLAS:   /Library/Frameworks/R.framework/Versions/4.2-arm64/Resources/lib/libRblas.0.dylib
@@ -191,23 +191,23 @@ sessionInfo()
 ## [8] base     
 ## 
 ## other attached packages:
-##  [1] corrplot_0.92    labelled_2.11.0  factoextra_1.0.7 plyr_1.8.8      
-##  [5] survey_4.2-1     survival_3.5-3   Matrix_1.5-3     lubridate_1.9.2 
+##  [1] corrplot_0.92    labelled_2.12.0  factoextra_1.0.7 plyr_1.8.8      
+##  [5] survey_4.2-1     survival_3.5-5   Matrix_1.5-4.1   lubridate_1.9.2 
 ##  [9] forcats_1.0.0    stringr_1.5.0    dplyr_1.1.2      purrr_1.0.1     
 ## [13] readr_2.1.4      tidyr_1.3.0      tibble_3.2.1     ggplot2_3.4.2   
 ## [17] tidyverse_2.0.0 
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] tidyselect_1.2.0 xfun_0.39        bslib_0.4.2      mitools_2.4     
-##  [5] haven_2.5.2      splines_4.2.3    lattice_0.20-45  colorspace_2.1-0
-##  [9] vctrs_0.6.2      generics_0.1.3   htmltools_0.5.5  yaml_2.3.7      
-## [13] utf8_1.2.3       rlang_1.1.1      jquerylib_0.1.4  pillar_1.9.0    
-## [17] glue_1.6.2       withr_2.5.0      DBI_1.1.3        lifecycle_1.0.3 
-## [21] munsell_0.5.0    gtable_0.3.3     evaluate_0.21    knitr_1.42      
-## [25] tzdb_0.4.0       fastmap_1.1.1    fansi_1.0.4      Rcpp_1.0.10     
-## [29] scales_1.2.1     cachem_1.0.8     jsonlite_1.8.4   hms_1.1.3       
-## [33] digest_0.6.31    stringi_1.7.12   ggrepel_0.9.3    cli_3.6.1       
-## [37] tools_4.2.3      magrittr_2.0.3   sass_0.4.6       pkgconfig_2.0.3 
-## [41] timechange_0.2.0 rmarkdown_2.21   rstudioapi_0.14  R6_2.5.1        
+##  [1] tidyselect_1.2.0  xfun_0.39         bslib_0.5.0       mitools_2.4      
+##  [5] haven_2.5.3       splines_4.2.3     lattice_0.21-8    colorspace_2.1-0 
+##  [9] vctrs_0.6.3       generics_0.1.3    htmltools_0.5.5   yaml_2.3.7       
+## [13] utf8_1.2.3        rlang_1.1.1       jquerylib_0.1.4   pillar_1.9.0     
+## [17] glue_1.6.2        withr_2.5.0       DBI_1.1.3         lifecycle_1.0.3  
+## [21] munsell_0.5.0     gtable_0.3.3      evaluate_0.21     knitr_1.43       
+## [25] tzdb_0.4.0        fastmap_1.1.1     fansi_1.0.4       Rcpp_1.0.11      
+## [29] scales_1.2.1      cachem_1.0.8      jsonlite_1.8.7    hms_1.1.3        
+## [33] digest_0.6.33     stringi_1.7.12    ggrepel_0.9.3     cli_3.6.1        
+## [37] tools_4.2.3       magrittr_2.0.3    sass_0.4.7        pkgconfig_2.0.3  
+## [41] timechange_0.2.0  rmarkdown_2.23    rstudioapi_0.15.0 R6_2.5.1         
 ## [45] compiler_4.2.3
 ```
