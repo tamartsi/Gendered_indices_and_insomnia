@@ -448,7 +448,7 @@ p + facet_grid(Age_group~Index_type) +
 
 ```r
 ggsave(file = file.path(folder_path, "Results/Indices_imputed_histograms_by_age.pdf"), 
-       width = 6, height = 2.7)
+       width = 6, height = 6)
 ```
 
 ```
