@@ -249,7 +249,7 @@ library(naniar)
 
 
 ```r
-folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gender_measure"
+folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gendered_indices"
 data_with_sleep <- read_csv(file.path(folder_path, "Data/sol_sofer_sorajja_joon_covariates_20220810.csv"))
 ```
 
@@ -345,14 +345,14 @@ summary(as.factor(dat_cesd$num_items))
 ```r
 # compute CESD for everyone, then set to NA for people with missing values
 # scale to the same value range as if we had 10 items available
-dat_cesd$CESD <- (10/9)*rowSums(dat_cesd[,wbea_cols])*(9/dat_cesd$num_items)
+dat_cesd$CESD9 <- (10/9)*rowSums(dat_cesd[,wbea_cols])*(9/dat_cesd$num_items)
 
 # set to NA
-dat_cesd$CESD[which(dat_cesd$num_items<7)] <- NA
+dat_cesd$CESD9[which(dat_cesd$num_items<7)] <- NA
 
 # merge CESD variable to the main dataset
 
-data_with_sleep <- merge(data_with_sleep, dat_cesd[,c("ID", "CESD")], by = "ID")
+data_with_sleep <- merge(data_with_sleep, dat_cesd[,c("ID", "CESD9")], by = "ID")
 
 data_with_sleep <- data_with_sleep %>%
   dplyr::select(-WBEA1,- WBEA2, -WBEA3,
@@ -365,8 +365,8 @@ data_with_sleep <- data_with_sleep %>%
 ```r
 dat <- data_with_sleep %>%
   mutate(
-    Gender=factor(GENDER,levels = c("F","M"),labels=c("Female","Male")),
-    Education=factor(EDUCATION_C3,levels = c("1","2","3"),labels=c("<12","12",">12")),
+    Sex=factor(GENDER,levels = c("F","M"),labels=c("Female","Male")),
+    Education=factor(EDUCATION_C3,levels = c("1","2","3"),labels=c("No high school diploma or GED","At most high school diploma/GED","Greater than high school/GED")),
     Center=factor(CENTER,levels = c("B","C","M","S"),labels=c("Bronx","Chicago", "Miami", "San Diego")),
     Income_level=factor(INCOME_C5,levels = c("1","2","3","4", "5"),labels = c("Less than $10,000","$10,001-$20,000","$20,001-$40,000","$40,001-$75,000","More than $75,000")),
     Current_Health_insurance=factor(N_HC,levels = c("0","1"),labels = c("No","Yes")),
@@ -401,7 +401,7 @@ dat$Employment_status <- relabel(
 # Creating a missing values plot
 
 ```r
-# variables of interest (not including center, age, gender, 
+# variables of interest (not including center, age, sex, 
 #   which have no missing values are are considered "baseline" variables)
 vars <-  c("Marital_status",
             "Income_level",
@@ -417,7 +417,7 @@ vars <-  c("Marital_status",
             "Background", 
             "Education",
             "STAI10",
-            "CESD",
+            "CESD9",
             "Insomnia", 
             "WHIIRS")
 
@@ -441,7 +441,7 @@ gg_miss_upset(dat[,vars], nsets = length(vars))
 
 ```r
 req_vars <- c("ID", "STRAT", "PSU_ID", "WEIGHT_FINAL_NORM_OVERALL", 
-              "Center", "Age", "Gender")
+              "Center", "Age", "Sex")
 
 dat_to_save <- dat[,c(req_vars, vars)]
 saveRDS(dat_to_save, file = file.path(folder_path, "Data/Data_with_miss.Rds"))

@@ -249,7 +249,7 @@ library(naniar)
 
 
 ```r
-folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gender_measure"
+folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gendered_indices/"
 data_with_sleep <- read_csv(file.path(folder_path, "Data/sol_sofer_sorajja_joon_covariates_20220810.csv"))
 ```
 
@@ -282,7 +282,7 @@ dat <- readRDS(file.path(folder_path, "Data/Data_with_miss.Rds"))
 # variables to impute or use in imputation
 vars <-  c("Center", 
            "Age", 
-           "Gender",
+           "Sex",
            "STRAT",
             "Marital_status",
             "Income_level",
@@ -298,7 +298,7 @@ vars <-  c("Center",
             "Background", 
             "Education",
             "STAI10",
-            "CESD",
+            "CESD9",
             "Insomnia", 
             "WHIIRS")
 ```

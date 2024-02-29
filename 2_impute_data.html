@@ -532,7 +532,7 @@ library(memisc)</code></pre>
 <pre class="r"><code>library(naniar)</code></pre>
 <div id="read-in-the-data" class="section level1">
 <h1>Read in the data</h1>
-<pre class="r"><code>folder_path &lt;- &quot;/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gender_measure&quot;
+<pre class="r"><code>folder_path &lt;- &quot;/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gendered_indices/&quot;
 data_with_sleep &lt;- read_csv(file.path(folder_path, &quot;Data/sol_sofer_sorajja_joon_covariates_20220810.csv&quot;))</code></pre>
 <pre><code>## Warning: One or more parsing issues, call `problems()` on your data frame for details,
 ## e.g.:
@@ -554,7 +554,7 @@ dat &lt;- readRDS(file.path(folder_path, &quot;Data/Data_with_miss.Rds&quot;))</
 <pre class="r"><code># variables to impute or use in imputation
 vars &lt;-  c(&quot;Center&quot;, 
            &quot;Age&quot;, 
-           &quot;Gender&quot;,
+           &quot;Sex&quot;,
            &quot;STRAT&quot;,
             &quot;Marital_status&quot;,
             &quot;Income_level&quot;,
@@ -570,7 +570,7 @@ vars &lt;-  c(&quot;Center&quot;,
             &quot;Background&quot;, 
             &quot;Education&quot;,
             &quot;STAI10&quot;,
-            &quot;CESD&quot;,
+            &quot;CESD9&quot;,
             &quot;Insomnia&quot;, 
             &quot;WHIIRS&quot;)</code></pre>
 </div>
