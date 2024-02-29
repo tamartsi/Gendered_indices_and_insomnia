@@ -326,7 +326,6 @@ for (imp_version in c("", ".1", ".2", ".3", ".4")){
 
 # Summarize the results
 
-```
 
 ## Creat supplemental figure 2: average imputed indices, distributions by sex
 
@@ -409,6 +408,53 @@ ggsave(file = file.path(folder_path, "Results/Indices_only_imputed_histograms.pd
 ```
 ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 ```
+
+
+# final figure: stratified by age. 
+
+
+```r
+dat$Age_group <- as.factor(cut(dat$Age, 
+                            breaks =  c(min(dat$Age), 30,40, 50, 60, max(dat$Age)), 
+                            include.lowest = TRUE))
+                            
+                            
+for_plot <- pivot_longer(dat, 
+                         cols = c("Mean_imputed_gise", "Mean_imputed_gipse"), 
+                         names_to = "Index_type", 
+                         values_to = "Index")
+
+index_medians <- for_plot %>% group_by(Index_type, Age_group, Sex) %>% 
+  summarize_at(vars(Index), list(index_median = median)) 
+
+
+p <- ggplot(for_plot, aes(x = Index)) + 
+  geom_histogram(aes(fill = Sex), alpha = 0.6, position = "identity") +
+  ggtitle("Histogram of indices stratitifed by sex") + 
+  theme_bw() + 
+  scale_fill_brewer(palette="Dark2") + 
+  xlab("Index value") + ylab("Count") 
+
+p + facet_grid(Age_group~Index_type) + 
+  geom_vline(data = index_medians, mapping = aes(xintercept = index_median, color = Sex)) + 
+  scale_color_brewer(palette="Dark2")
+```
+
+```
+## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+```
+
+![](7_train_scores_imputed_data_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
+
+```r
+ggsave(file = file.path(folder_path, "Results/Indices_imputed_histograms_by_age.pdf"), 
+       width = 6, height = 2.7)
+```
+
+```
+## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+```
+
 
 # Save the dataset for future use
 
