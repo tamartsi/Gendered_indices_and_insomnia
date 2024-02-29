@@ -31,7 +31,7 @@ library(naniar)
 # Read in the data
 
 ```{r}
-folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gender_measure"
+folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gendered_indices"
 data_with_sleep <- read_csv(file.path(folder_path, "Data/sol_sofer_sorajja_joon_covariates_20220810.csv"))
 
 # load the prepared dataset
@@ -44,7 +44,7 @@ dat <- readRDS(file.path(folder_path, "Data/Data_with_miss.Rds"))
 
 vars <-  c("Center", 
            "Age", 
-           "Gender",
+           "Sex",
            "STRAT",
             "Marital_status",
             "Income_level",
@@ -59,16 +59,16 @@ vars <-  c("Center",
             "Background", 
             "Education",
             "STAI10",
-            "CESD",
+            "CESD9",
             "Insomnia",
            "WHIIRS")
 
 survey_obj <- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=dat)
 
 
-tbl1_noweight <- print(CreateTableOne(vars = vars, data =dat, strata = "Gender"), missing=TRUE,varLabels = TRUE,digits =3,pDigits=3,showAllLevels=TRUE)
+tbl1_noweight <- print(CreateTableOne(vars = vars, data =dat, strata = "Sex"), missing=TRUE,varLabels = TRUE,digits =3,pDigits=3,showAllLevels=TRUE)
 
-tbl1_weighted <- print(svyCreateTableOne(vars = vars,  data = survey_obj, strata= "Gender"), missing=TRUE, varLabels = TRUE,digits =3,pDigits=3, showAllLevels=TRUE)
+tbl1_weighted <- print(svyCreateTableOne(vars = vars,  data = survey_obj, strata= "Sex"), missing=TRUE, varLabels = TRUE,digits =3,pDigits=3, showAllLevels=TRUE)
 
 
 tbl1_w <- tbl1_weighted[,-which(colnames(tbl1_weighted) %in% c("p", "test"))]   

@@ -249,7 +249,7 @@ library(naniar)
 
 
 ```r
-folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gender_measure"
+folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gendered_indices"
 data_with_sleep <- read_csv(file.path(folder_path, "Data/sol_sofer_sorajja_joon_covariates_20220810.csv"))
 ```
 
@@ -281,7 +281,7 @@ dat <- readRDS(file.path(folder_path, "Data/Data_with_miss.Rds"))
 ```r
 vars <-  c("Center", 
            "Age", 
-           "Gender",
+           "Sex",
            "STRAT",
             "Marital_status",
             "Income_level",
@@ -296,18 +296,18 @@ vars <-  c("Center",
             "Background", 
             "Education",
             "STAI10",
-            "CESD",
+            "CESD9",
             "Insomnia",
            "WHIIRS")
 
 survey_obj <- svydesign(id=~PSU_ID, strata=~STRAT, weights=~WEIGHT_FINAL_NORM_OVERALL , data=dat)
 
 
-tbl1_noweight <- print(CreateTableOne(vars = vars, data =dat, strata = "Gender"), missing=TRUE,varLabels = TRUE,digits =3,pDigits=3,showAllLevels=TRUE)
+tbl1_noweight <- print(CreateTableOne(vars = vars, data =dat, strata = "Sex"), missing=TRUE,varLabels = TRUE,digits =3,pDigits=3,showAllLevels=TRUE)
 ```
 
 ```
-##                                     Stratified by Gender
+##                                     Stratified by Sex
 ##                                      level                                                            
 ##   n                                                                                                   
 ##   Center (%)                         Bronx                                                            
@@ -315,7 +315,7 @@ tbl1_noweight <- print(CreateTableOne(vars = vars, data =dat, strata = "Gender")
 ##                                      Miami                                                            
 ##                                      San Diego                                                        
 ##   Age (mean (SD))                                                                                     
-##   Gender (%)                         Female                                                           
+##   Sex (%)                            Female                                                           
 ##                                      Male                                                             
 ##   STRAT (mean (SD))                                                                                   
 ##   Marital_status (%)                 Single                                                           
@@ -351,15 +351,15 @@ tbl1_noweight <- print(CreateTableOne(vars = vars, data =dat, strata = "Gender")
 ##                                      Puerto Rican                                                     
 ##                                      South American                                                   
 ##                                      More than one/Other heritage                                     
-##   Education (%)                      <12                                                              
-##                                      12                                                               
-##                                      >12                                                              
+##   Education (%)                      No high school diploma or GED                                    
+##                                      At most high school diploma/GED                                  
+##                                      Greater than high school/GED                                     
 ##   STAI10 (mean (SD))                                                                                  
-##   CESD (mean (SD))                                                                                    
+##   CESD9 (mean (SD))                                                                                   
 ##   Insomnia (%)                       No                                                               
 ##                                      Yes                                                              
 ##   WHIIRS (mean (SD))                                                                                  
-##                                     Stratified by Gender
+##                                     Stratified by Sex
 ##                                      Female         Male           p      test
 ##   n                                   9835           6580                     
 ##   Center (%)                          2518 ( 25.6)   1600 ( 24.3)  <0.001     
@@ -367,7 +367,7 @@ tbl1_noweight <- print(CreateTableOne(vars = vars, data =dat, strata = "Gender")
 ##                                       2353 ( 23.9)   1724 ( 26.2)             
 ##                                       2651 ( 27.0)   1435 ( 21.8)             
 ##   Age (mean (SD))                    46.54 (13.63)  44.81 (14.31)  <0.001     
-##   Gender (%)                          9835 (100.0)      0 (  0.0)  <0.001     
+##   Sex (%)                             9835 (100.0)      0 (  0.0)  <0.001     
 ##                                          0 (  0.0)   6580 (100.0)             
 ##   STRAT (mean (SD))                  16.41 (5.03)   16.15 (5.03)    0.001     
 ##   Marital_status (%)                  2552 ( 26.1)   1970 ( 30.1)  <0.001     
@@ -407,11 +407,11 @@ tbl1_noweight <- print(CreateTableOne(vars = vars, data =dat, strata = "Gender")
 ##                                       2353 ( 24.1)   1827 ( 27.9)             
 ##                                       3660 ( 37.4)   2277 ( 34.8)             
 ##   STAI10 (mean (SD))                 17.98 (6.17)   16.18 (5.18)   <0.001     
-##   CESD (mean (SD))                   10.57 (5.03)    9.15 (4.34)   <0.001     
+##   CESD9 (mean (SD))                  10.57 (5.03)    9.15 (4.34)   <0.001     
 ##   Insomnia (%)                        6103 ( 64.1)   4750 ( 75.1)  <0.001     
 ##                                       3424 ( 35.9)   1578 ( 24.9)             
 ##   WHIIRS (mean (SD))                  7.68 (5.54)    6.22 (5.09)   <0.001     
-##                                     Stratified by Gender
+##                                     Stratified by Sex
 ##                                      Missing
 ##   n                                         
 ##   Center (%)                         0.0    
@@ -419,7 +419,7 @@ tbl1_noweight <- print(CreateTableOne(vars = vars, data =dat, strata = "Gender")
 ##                                             
 ##                                             
 ##   Age (mean (SD))                    0.0    
-##   Gender (%)                         0.0    
+##   Sex (%)                            0.0    
 ##                                             
 ##   STRAT (mean (SD))                  0.0    
 ##   Marital_status (%)                 0.5    
@@ -459,18 +459,18 @@ tbl1_noweight <- print(CreateTableOne(vars = vars, data =dat, strata = "Gender")
 ##                                             
 ##                                             
 ##   STAI10 (mean (SD))                 2.2    
-##   CESD (mean (SD))                   2.5    
+##   CESD9 (mean (SD))                  2.5    
 ##   Insomnia (%)                       3.4    
 ##                                             
 ##   WHIIRS (mean (SD))                 3.4
 ```
 
 ```r
-tbl1_weighted <- print(svyCreateTableOne(vars = vars,  data = survey_obj, strata= "Gender"), missing=TRUE, varLabels = TRUE,digits =3,pDigits=3, showAllLevels=TRUE)
+tbl1_weighted <- print(svyCreateTableOne(vars = vars,  data = survey_obj, strata= "Sex"), missing=TRUE, varLabels = TRUE,digits =3,pDigits=3, showAllLevels=TRUE)
 ```
 
 ```
-##                                     Stratified by Gender
+##                                     Stratified by Sex
 ##                                      level                                                            
 ##   n                                                                                                   
 ##   Center (%)                         Bronx                                                            
@@ -478,7 +478,7 @@ tbl1_weighted <- print(svyCreateTableOne(vars = vars,  data = survey_obj, strata
 ##                                      Miami                                                            
 ##                                      San Diego                                                        
 ##   Age (mean (SD))                                                                                     
-##   Gender (%)                         Female                                                           
+##   Sex (%)                            Female                                                           
 ##                                      Male                                                             
 ##   STRAT (mean (SD))                                                                                   
 ##   Marital_status (%)                 Single                                                           
@@ -514,15 +514,15 @@ tbl1_weighted <- print(svyCreateTableOne(vars = vars,  data = survey_obj, strata
 ##                                      Puerto Rican                                                     
 ##                                      South American                                                   
 ##                                      More than one/Other heritage                                     
-##   Education (%)                      <12                                                              
-##                                      12                                                               
-##                                      >12                                                              
+##   Education (%)                      No high school diploma or GED                                    
+##                                      At most high school diploma/GED                                  
+##                                      Greater than high school/GED                                     
 ##   STAI10 (mean (SD))                                                                                  
-##   CESD (mean (SD))                                                                                    
+##   CESD9 (mean (SD))                                                                                   
 ##   Insomnia (%)                       No                                                               
 ##                                      Yes                                                              
 ##   WHIIRS (mean (SD))                                                                                  
-##                                     Stratified by Gender
+##                                     Stratified by Sex
 ##                                      Female           Male             p     
 ##   n                                   8557.8           7857.2                
 ##   Center (%)                          2589.6 ( 30.3)   2170.8 ( 27.6)   0.001
@@ -530,7 +530,7 @@ tbl1_weighted <- print(svyCreateTableOne(vars = vars,  data = survey_obj, strata
 ##                                       2441.0 ( 28.5)   2362.3 ( 30.1)        
 ##                                       2273.5 ( 26.6)   1987.0 ( 25.3)        
 ##   Age (mean (SD))                      41.79 (15.12)    40.26 (14.84)  <0.001
-##   Gender (%)                          8557.8 (100.0)      0.0 (  0.0)  <0.001
+##   Sex (%)                             8557.8 (100.0)      0.0 (  0.0)  <0.001
 ##                                          0.0 (  0.0)   7857.2 (100.0)        
 ##   STRAT (mean (SD))                    17.65 (5.44)     17.56 (5.39)    0.490
 ##   Marital_status (%)                  2695.2 ( 31.6)   2964.5 ( 37.9)  <0.001
@@ -570,11 +570,11 @@ tbl1_weighted <- print(svyCreateTableOne(vars = vars,  data = survey_obj, strata
 ##                                       2244.3 ( 26.3)   2365.0 ( 30.2)        
 ##                                       3475.0 ( 40.8)   2975.0 ( 38.0)        
 ##   STAI10 (mean (SD))                   17.82 (6.10)     16.17 (5.07)   <0.001
-##   CESD (mean (SD))                     10.36 (4.97)      9.07 (4.24)   <0.001
+##   CESD9 (mean (SD))                    10.36 (4.97)      9.07 (4.24)   <0.001
 ##   Insomnia (%)                        5478.9 ( 66.4)   5765.8 ( 76.4)  <0.001
 ##                                       2768.4 ( 33.6)   1779.6 ( 23.6)        
 ##   WHIIRS (mean (SD))                    7.36 (5.49)      6.06 (5.03)   <0.001
-##                                     Stratified by Gender
+##                                     Stratified by Sex
 ##                                      test Missing
 ##   n                                              
 ##   Center (%)                              0.0    
@@ -582,7 +582,7 @@ tbl1_weighted <- print(svyCreateTableOne(vars = vars,  data = survey_obj, strata
 ##                                                  
 ##                                                  
 ##   Age (mean (SD))                         0.0    
-##   Gender (%)                              0.0    
+##   Sex (%)                                 0.0    
 ##                                                  
 ##   STRAT (mean (SD))                       0.0    
 ##   Marital_status (%)                      0.5    
@@ -622,7 +622,7 @@ tbl1_weighted <- print(svyCreateTableOne(vars = vars,  data = survey_obj, strata
 ##                                                  
 ##                                                  
 ##   STAI10 (mean (SD))                      2.2    
-##   CESD (mean (SD))                        2.5    
+##   CESD9 (mean (SD))                       2.5    
 ##   Insomnia (%)                            3.4    
 ##                                                  
 ##   WHIIRS (mean (SD))                      3.4
@@ -659,7 +659,7 @@ sessionInfo()
 ```
 ## R version 4.2.3 (2023-03-15)
 ## Platform: aarch64-apple-darwin20 (64-bit)
-## Running under: macOS Ventura 13.3.1
+## Running under: macOS Ventura 13.6
 ## 
 ## Matrix products: default
 ## BLAS:   /Library/Frameworks/R.framework/Versions/4.2-arm64/Resources/lib/libRblas.0.dylib
@@ -675,31 +675,31 @@ sessionInfo()
 ## other attached packages:
 ##  [1] naniar_1.0.0     UpSetR_1.4.0     mice_3.16.0      glmnet_4.1-7    
 ##  [5] boot_1.3-28.1    mi_1.1           sjlabelled_1.2.0 memisc_0.99.31.6
-##  [9] MASS_7.3-58.2    lattice_0.20-45  tableone_0.13.2  labelled_2.11.0 
-## [13] factoextra_1.0.7 plyr_1.8.8       survey_4.2-1     survival_3.5-3  
-## [17] Matrix_1.5-3     lubridate_1.9.2  forcats_1.0.0    stringr_1.5.0   
+##  [9] MASS_7.3-60      lattice_0.21-8   tableone_0.13.2  labelled_2.12.0 
+## [13] factoextra_1.0.7 plyr_1.8.8       survey_4.2-1     survival_3.5-5  
+## [17] Matrix_1.5-4.1   lubridate_1.9.2  forcats_1.0.0    stringr_1.5.0   
 ## [21] dplyr_1.1.2      purrr_1.0.1      readr_2.1.4      tidyr_1.3.0     
 ## [25] tibble_3.2.1     ggplot2_3.4.2    tidyverse_2.0.0 
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] nlme_3.1-162      bit64_4.0.5       insight_0.19.2    tools_4.2.3      
-##  [5] backports_1.4.1   bslib_0.4.2       utf8_1.2.3        R6_2.5.1         
+##  [1] nlme_3.1-162      bit64_4.0.5       insight_0.19.3    tools_4.2.3      
+##  [5] backports_1.4.1   bslib_0.5.0       utf8_1.2.3        R6_2.5.1         
 ##  [9] rpart_4.1.19      DBI_1.1.3         colorspace_2.1-0  jomo_2.7-6       
-## [13] nnet_7.3-18       withr_2.5.0       tidyselect_1.2.0  gridExtra_2.3    
-## [17] bit_4.0.5         compiler_4.2.3    cli_3.6.1         sass_0.4.6       
-## [21] scales_1.2.1      proxy_0.4-27      digest_0.6.31     minqa_1.2.5      
-## [25] rmarkdown_2.21    pkgconfig_2.0.3   htmltools_0.5.5   lme4_1.1-33      
-## [29] fastmap_1.1.1     rlang_1.1.1       rstudioapi_0.14   shape_1.4.6      
-## [33] jquerylib_0.1.4   generics_0.1.3    zoo_1.8-12        jsonlite_1.8.4   
-## [37] vroom_1.6.3       car_3.1-2         magrittr_2.0.3    Rcpp_1.0.10      
+## [13] nnet_7.3-19       withr_2.5.0       tidyselect_1.2.0  gridExtra_2.3    
+## [17] bit_4.0.5         compiler_4.2.3    cli_3.6.1         sass_0.4.7       
+## [21] scales_1.2.1      proxy_0.4-27      digest_0.6.33     minqa_1.2.5      
+## [25] rmarkdown_2.23    pkgconfig_2.0.3   htmltools_0.5.5   lme4_1.1-34      
+## [29] fastmap_1.1.1     rlang_1.1.1       rstudioapi_0.15.0 shape_1.4.6      
+## [33] jquerylib_0.1.4   generics_0.1.3    zoo_1.8-12        jsonlite_1.8.7   
+## [37] vroom_1.6.3       car_3.1-2         magrittr_2.0.3    Rcpp_1.0.11      
 ## [41] munsell_0.5.0     fansi_1.0.4       abind_1.4-5       lifecycle_1.0.3  
 ## [45] visdat_0.6.0      stringi_1.7.12    yaml_2.3.7        carData_3.0-5    
 ## [49] parallel_4.2.3    ggrepel_0.9.3     crayon_1.5.2      mitml_0.4-5      
-## [53] haven_2.5.2       splines_4.2.3     hms_1.1.3         knitr_1.42       
+## [53] haven_2.5.3       splines_4.2.3     hms_1.1.3         knitr_1.43       
 ## [57] pillar_1.9.0      codetools_0.2-19  pan_1.8           glue_1.6.2       
-## [61] evaluate_0.21     mitools_2.4       data.table_1.14.8 vctrs_0.6.2      
+## [61] evaluate_0.21     mitools_2.4       data.table_1.14.8 vctrs_0.6.3      
 ## [65] nloptr_2.0.3      tzdb_0.4.0        foreach_1.5.2     gtable_0.3.3     
-## [69] cachem_1.0.8      xfun_0.39         broom_1.0.4       e1071_1.7-13     
-## [73] coda_0.19-4       class_7.3-21      arm_1.13-1        iterators_1.0.14 
+## [69] cachem_1.0.8      xfun_0.39         broom_1.0.5       e1071_1.7-13     
+## [73] coda_0.19-4       class_7.3-22      arm_1.13-1        iterators_1.0.14 
 ## [77] timechange_0.2.0
 ```

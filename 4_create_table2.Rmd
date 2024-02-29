@@ -76,7 +76,7 @@ cont_vars  <- c( "Language_acculturation",
                   "Social_acculturation",
                  "Ethnic_identity_score", 
                   "STAI10",
-                  "CESD")
+                  "CESD9")
 
 binary_vars  <- c("Language_pref",
                  "Current_Health_insurance")
@@ -84,7 +84,7 @@ binary_vars  <- c("Language_pref",
 
 ```
 
-# functions to extract summarized results from analysis, when gender is exposure
+# functions to extract summarized results from analysis, when sex is exposure
 ```{r}
 extract_mult_out <- function(mod, exposure, out_name, level_names, round_digit = 2){
   est <- summary(mod)$coeftable
@@ -126,17 +126,17 @@ extract_one_out <- function(mod, exposure, out_name, exponentiate = TRUE, round_
 
 ```
 
-# Prepare a table of results: gender is exposure
+# Prepare a table of results: sex is exposure
 
 ```{r}
 all_out <- vector(mode = "list", length = length(multi_vars) + length(single_vars))
 ind <- 1
 
 for (var in multi_vars){
-  vglm_mod <- svy_vglm(formula = as.formula(paste0(var, "~Gender+Age+Center+Background")), design = sleepDesign, family = multinomial(refLevel = 1), drop.unused.levels = TRUE)
+  vglm_mod <- svy_vglm(formula = as.formula(paste0(var, "~Sex+Age+Center+Background")), design = sleepDesign, family = multinomial(refLevel = 1), drop.unused.levels = TRUE)
   
   all_out[[ind]] <- extract_mult_out(vglm_mod, 
-                                     exposure = "Gender", 
+                                     exposure = "Sex", 
                                      out_name  = var, 
                                      level_names  = levels(dat[[var]])[-1])
   ind <- ind + 1
@@ -144,31 +144,31 @@ for (var in multi_vars){
 
 
 for (var in cont_vars){
-  mod <- svyglm(formula = as.formula(paste0(var, "~Gender+Age+Center+Background")), design = sleepDesign, family = quasipoisson())
+  mod <- svyglm(formula = as.formula(paste0(var, "~Sex+Age+Center+Background")), design = sleepDesign, family = quasipoisson())
   
   all_out[[ind]] <- extract_one_out(mod, 
-                                     exposure = "Gender", 
+                                     exposure = "Sex", 
                                      out_name  = var, 
                                     exponentiate = FALSE)
   ind <- ind + 1
 }
 
 for (var in binary_vars){
-  mod <- svyglm(formula = as.formula(paste0(var, "~Gender+Age+Center+Background")), design = sleepDesign, family = quasibinomial())
+  mod <- svyglm(formula = as.formula(paste0(var, "~Sex+Age+Center+Background")), design = sleepDesign, family = quasibinomial())
   
   all_out[[ind]] <- extract_one_out(mod, 
-                                     exposure = "Gender", 
+                                     exposure = "Sex", 
                                      out_name  = var, 
                                     exponentiate= TRUE)
   ind <- ind + 1
 }
 
 
-gender_tab <- do.call(rbind, all_out)
-rownames(gender_tab) <- paste0("r", 1:nrow(gender_tab))
-print(gender_tab)
+sex_tab <- do.call(rbind, all_out)
+rownames(sex_tab) <- paste0("r", 1:nrow(sex_tab))
+print(sex_tab)
 
-write.csv(gender_tab, file = file.path(folder_path, "Results/All_vars_assoc_gender.csv"))
+write.csv(sex_tab, file = file.path(folder_path, "Results/All_vars_assoc_sex.csv"))
 
 ```
 
@@ -209,7 +209,7 @@ extract_one_exp <- function(mod, exposure, round_digit = 2){
 
 ```
 
-# Prepare a table of results: insomnia is outcome, gender unadjusted
+# Prepare a table of results: insomnia is outcome, sex unadjusted
 
 ```{r}
 all_out <- vector(mode = "list", length = length(multi_vars) + length(single_vars))
@@ -237,22 +237,22 @@ for (var in c(cont_vars, binary_vars)){
 }
 
 
-insomnia_no_gender_tab <- do.call(rbind, all_out)
-rownames(insomnia_no_gender_tab) <- paste0("r", 1:nrow(gender_tab))
-print(insomnia_no_gender_tab)
+insomnia_no_sex_tab <- do.call(rbind, all_out)
+rownames(insomnia_no_sex_tab) <- paste0("r", 1:nrow(sex_tab))
+print(insomnia_no_sex_tab)
 
-write.csv(insomnia_no_gender_tab, file = file.path(folder_path, "Results/All_vars_assoc_insomnia_no_gender.csv"))
+write.csv(insomnia_no_sex_tab, file = file.path(folder_path, "Results/All_vars_assoc_insomnia_no_sex.csv"))
 ```
 
 
-# Prepare a table of results: insomnia is outcome, gender adjusted
+# Prepare a table of results: insomnia is outcome, sex adjusted
 
 ```{r}
 all_out <- vector(mode = "list", length = length(multi_vars) + length(single_vars))
 ind <- 1
 
 for (var in multi_vars){
-   mod <- svyglm(formula = as.formula(paste0("Insomnia~Gender + Age+Center+Background+", var)), 
+   mod <- svyglm(formula = as.formula(paste0("Insomnia~Sex + Age+Center+Background+", var)), 
                  design = sleepDesign, family = quasibinomial())
    
 
@@ -264,7 +264,7 @@ for (var in multi_vars){
 
 
 for (var in c(cont_vars, binary_vars)){
-  mod <- svyglm(formula = as.formula(paste0("Insomnia~Gender+Age+Center+Background+", var)), 
+  mod <- svyglm(formula = as.formula(paste0("Insomnia~Sex+Age+Center+Background+", var)), 
                 design = sleepDesign, family = quasibinomial())
   
   all_out[[ind]] <- extract_one_exp(mod, 
@@ -273,10 +273,10 @@ for (var in c(cont_vars, binary_vars)){
 }
 
 
-insomnia_gender_adj_tab <- do.call(rbind, all_out)
-rownames(insomnia_gender_adj_tab) <- paste0("r", 1:nrow(gender_tab))
-print(insomnia_gender_adj_tab)
-write.csv(insomnia_gender_adj_tab, file = file.path(folder_path, "Results/All_vars_assoc_insomnia_gender_adj.csv"))
+insomnia_sex_adj_tab <- do.call(rbind, all_out)
+rownames(insomnia_sex_adj_tab) <- paste0("r", 1:nrow(sex_tab))
+print(insomnia_sex_adj_tab)
+write.csv(insomnia_sex_adj_tab, file = file.path(folder_path, "Results/All_vars_assoc_insomnia_sex_adj.csv"))
 ```
 
 
@@ -286,27 +286,26 @@ For the heatmap, we will consolidate results from all models. We will use the lo
 
 ```{r}
 # our 3 DFs with results are
-# gender_tab
-# insomnia_no_gender_tab
-# insomnia_gender_adj_tab
+# sex_tab
+# insomnia_no_sex_tab
+# insomnia_sex_adj_tab
 
-heatmap_dat <- data.frame(Gender = gender_tab$est, 
-                          Insomnia_gender_unadjusted = insomnia_no_gender_tab$est,
-                          Insomnia_gender_adjusted = insomnia_gender_adj_tab$est)
-rownames(heatmap_dat) <- gender_tab$outcome
+heatmap_dat <- data.frame(Sex = sex_tab$est, 
+                          Insomnia_sex_unadjusted = insomnia_no_sex_tab$est,
+                          Insomnia_sex_adjusted = insomnia_sex_adj_tab$est)
+rownames(heatmap_dat) <- sex_tab$outcome
 # check:
-all(gender_tab$outcome == insomnia_gender_adj_tab$exposure) # TRUE
+all(sex_tab$outcome == insomnia_sex_adj_tab$exposure) # TRUE
 
-heatmap_dat$Insomnia_gender_unadjusted <- log(heatmap_dat$Insomnia_gender_unadjusted)
-heatmap_dat$Insomnia_gender_adjusted <- log(heatmap_dat$Insomnia_gender_adjusted)
-inds_transform_gender <- which(!is.element(rownames(heatmap_dat), cont_vars))
-heatmap_dat$Gender[inds_transform_gender] <- log(heatmap_dat$Gender[inds_transform_gender] )
+heatmap_dat$Insomnia_sex_unadjusted <- log(heatmap_dat$Insomnia_sex_unadjusted)
+heatmap_dat$Insomnia_sex_adjusted <- log(heatmap_dat$Insomnia_sex_adjusted)
+inds_transform_sex <- which(!is.element(rownames(heatmap_dat), cont_vars))
+heatmap_dat$Sex[inds_transform_sex] <- log(heatmap_dat$Sex[inds_transform_sex] )
 
 # change some of variables names in the heatmap
-rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Language_acculturation")] <- "Short language acculturation scale"
-rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Social_acculturation")] <- "Short social acculturation scale"
+rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Language_acculturation")] <- "SHAS language acculturation subscale"
+rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Social_acculturation")] <- "SHAS social acculturation subscale"
 rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Ethnic_identity_score")] <- "Ethnic identification score"
-rownames(heatmap_dat)[which(rownames(heatmap_dat) == "CESD")] <- "CESD9"
 
 rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Current_Health_insurance")] <- "Has current health insurance"
 
@@ -314,12 +313,12 @@ rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Language_pref")] <- "Langu
 
 rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Occupation: Professional/technical, administrative/executive, or office staff")] <- "Occupation: Professional/technical"
 
-rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Employment_status: Employed part-time(<=35 hours/week)")] <- "Employment: part-time(<=35 hours/week)"
+rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Employment status: Employed part-time(<=35 hours/week)")] <- "Employment: part-time(<=35 hours/week)"
 
-rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Employment_status: Employed full-time(>35 hours/week)")] <- "Employment: full-time(>35 hours/week)"
+rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Employment status: Employed full-time(>35 hours/week)")] <- "Employment: full-time(>35 hours/week)"
 
-rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Marital_status: Married or living with a partner")] <- "Married or living with a partner"
-rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Marital_status: Separated,divorced,or widow(er)")] <- "Separated,divorced,or widow(er)"
+rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Marital status: Married or living with a partner")] <- "Married or living with a partner"
+rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Marital status: Separated,divorced,or widow(er)")] <- "Separated,divorced,or widow(er)"
 
 
 heatmap_dat$y <- rownames(heatmap_dat)
@@ -338,24 +337,24 @@ heatmap_dat$y <- factor(heatmap_dat$y, levels = heatmap_dat$y[rev(c(1:2,  #marit
                                                                 20:21))]) # psychological
 
 heatmap_long <- pivot_longer(heatmap_dat, 
-                             cols = c("Gender", "Insomnia_gender_unadjusted", "Insomnia_gender_adjusted"),
+                             cols = c("Sex", "Insomnia_sex_unadjusted", "Insomnia_sex_adjusted"),
                              names_to = "x",
                              values_to = "value")
 
-heatmap_long$x[which(heatmap_long$x == "Insomnia_gender_adjusted")] <- "Insomnia: sex adjusted" # "Insomnia:\n sex\n adjusted"
-heatmap_long$x[which(heatmap_long$x == "Insomnia_gender_unadjusted")] <- "Insomnia: unadjusted to sex" # "Insomnia:\n unadjusted\n to sex"
-heatmap_long$x[which(heatmap_long$x == "Gender")] <- "Male sex" #"Male\n sex"
+heatmap_long$x[which(heatmap_long$x == "Insomnia_sex_adjusted")] <- "Insomnia: sex adjusted" # "Insomnia:\n sex\n adjusted"
+heatmap_long$x[which(heatmap_long$x == "Insomnia_sex_unadjusted")] <- "Insomnia: unadjusted to sex" # "Insomnia:\n unadjusted\n to sex"
+heatmap_long$x[which(heatmap_long$x == "Sex")] <- "Male sex" #"Male\n sex"
 
 ggplot(heatmap_long, aes(x = x, y = y)) + 
     geom_tile(aes(fill = value)) + 
-      ggtitle("Adjusted associations with sex and insomnia") +   
+     # ggtitle("Adjusted associations with sex and insomnia") +   
       scale_fill_gradient2(low = "navy", mid = "white", high = "red") + 
       ylab("") + xlab("") + 
       theme(axis.text.x = element_text( hjust= 0, size = 12), 
             axis.text.y = element_text(size = 12)) + 
           scale_x_discrete(labels = function(x) str_wrap(x, width = 7))
 
-ggsave(file = file.path(folder_path, "Results/Heatmap_sex_insomnia_assoc.pdf"), width = 7, height = 6)
+ggsave(file = file.path(folder_path, "Results/Heatmap_sex_insomnia_assoc.pdf"), width = 9, height = 6)
 
 ```
 

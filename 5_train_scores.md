@@ -231,7 +231,7 @@ library(reshape2)
 
 
 ```r
-folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gender_measure"
+folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gendered_indices"
 data_with_sleep <- read_csv(file.path(folder_path, "Data/sol_sofer_sorajja_joon_covariates_20220810.csv"))
 ```
 
@@ -259,7 +259,7 @@ dat <- readRDS(file.path(folder_path, "Data/Data_with_miss.Rds"))
 ```
 
 # Train the two indices
-Primary genedered index: does not include psychological variables. Secondary gendered index: includes also trait anxiety scale and trait depression scale (without the sleep-related item).
+Primary genedered index GISE: does not include psychological variables. Secondary gendered index GIPSE: includes also trait anxiety scale and trait depression scale (without the sleep-related item).
 
 
 
@@ -268,8 +268,8 @@ Primary genedered index: does not include psychological variables. Secondary gen
 # Use only complete data in primary analysis
 dat_cc <- dat[complete.cases(dat),]
 
-# define the model matrix for the primary index 
-X_primary <- model.matrix(Gender ~
+# define the model matrix for the GISE
+X_gise <- model.matrix(Sex ~
                     Marital_status +
                     Income_level + 
                     Employment_status + 
@@ -284,7 +284,7 @@ X_primary <- model.matrix(Gender ~
 
 
 
-X_secondary <- model.matrix(Gender ~
+X_gipse <- model.matrix(Sex ~
                     Marital_status +
                     Income_level + 
                     Employment_status + 
@@ -297,30 +297,30 @@ X_secondary <- model.matrix(Gender ~
                     Ethnic_identity_score + 
                     Years_in_US + 
                     STAI10 + 
-                    CESD, dat_cc)[,-1]
+                    CESD9, dat_cc)[,-1]
 
-# primary index
+# GISE
 set.seed(929)
-cv_lasso_primary <- cv.glmnet(X_primary, dat_cc$Gender, alpha = 1, family = "binomial", nfolds = 5)
+cv_lasso_gise <- cv.glmnet(X_gise, dat_cc$Sex, alpha = 1, family = "binomial", nfolds = 5)
 
 # use the lambda that resulted in minimum CVM to refit the model
 
 set.seed(929)
-lasso_model_primary <- glmnet(X_primary, dat_cc$Gender, family = "binomial", alpha = 1, lambda = cv_lasso_primary$lambda.min)
-primary_index <- lasso_model_primary %>% predict(newx = X_primary)
+lasso_model_gise <- glmnet(X_gise, dat_cc$Sex, family = "binomial", alpha = 1, lambda = cv_lasso_gise$lambda.min)
+gise <- lasso_model_gise %>% predict(newx = X_gise)
 
-# secondary index
-cv_lasso_secondary <- cv.glmnet(X_secondary, dat_cc$Gender, alpha = 1, family = "binomial", nfolds = 5)
+# GIPSE
+cv_lasso_gipse <- cv.glmnet(X_gipse, dat_cc$Sex, alpha = 1, family = "binomial", nfolds = 5)
 
 # use the lambda that resulted in minimum CVM to refit the model
 
 set.seed(929)
-lasso_model_secondary <- glmnet(X_secondary, dat_cc$Gender, family = "binomial", alpha = 1, lambda = cv_lasso_secondary$lambda.min)
-secondary_index <- lasso_model_secondary %>% predict(newx = X_secondary)
+lasso_model_gipse <- glmnet(X_gipse, dat_cc$Sex, family = "binomial", alpha = 1, lambda = cv_lasso_gipse$lambda.min)
+gipse <- lasso_model_gipse %>% predict(newx = X_gipse)
 
 ## add to the dataset
-dat_cc$Primary_index  <- primary_index
-dat_cc$Secondary_index  <- secondary_index
+dat_cc$GISE <- gise
+dat_cc$GIPSE  <- gipse
 
 # save the dataset
 saveRDS(dat_cc, file.path(folder_path, "Data/Data_complete_case_with_indices.Rds"))
@@ -332,7 +332,7 @@ saveRDS(dat_cc, file.path(folder_path, "Data/Data_complete_case_with_indices.Rds
 
 ```r
 # check
-all(rownames(lasso_model_secondary$beta)[1:(ncol(X_secondary)-2)] == rownames(lasso_model_primary$beta)) # TRUE
+all(rownames(lasso_model_gipse$beta)[1:(ncol(X_gipse)-2)] == rownames(lasso_model_gise$beta)) # TRUE
 ```
 
 ```
@@ -340,23 +340,23 @@ all(rownames(lasso_model_secondary$beta)[1:(ncol(X_secondary)-2)] == rownames(la
 ```
 
 ```r
-coef_primary <- c(lasso_model_primary$beta[,1], rep(NA, 2))
-coef_secondary <- c(lasso_model_secondary$beta[,1])
-table3 <- data.frame(Variable = colnames(X_secondary), 
-                     Coef_primary = round(coef_primary,2 ),
-                     Coef_secondary = round(coef_secondary,2 ))
+coef_gise <- c(lasso_model_gise$beta[,1], rep(NA, 2))
+coef_gipse <- c(lasso_model_gipse$beta[,1])
+table3 <- data.frame(Variable = colnames(X_gipse), 
+                     Coef_GISE = round(coef_gise,2 ),
+                     Coef_GIPSE = round(coef_gipse,2 ))
 
 write.csv(table3, file = file.path(folder_path, "Results/Indices_coefs.csv"))
 ```
 
-## Creat figure 2: index distributions by gender
+## Creat figure 2: index distributions by sex
 We are not standardizing them at this point, because it does not matter. 
 
 
 ```r
-dat_cc$Sex <- dat_cc$Gender
+dat_cc$Sex <- dat_cc$Sex
 for_plot <- pivot_longer(dat_cc, 
-                         cols = c("Primary_index", "Secondary_index"), 
+                         cols = c("GISE", "GIPSE"), 
                          names_to = "Index_type", 
                          values_to = "Index")
 
@@ -393,7 +393,7 @@ sessionInfo()
 ```
 ## R version 4.2.3 (2023-03-15)
 ## Platform: aarch64-apple-darwin20 (64-bit)
-## Running under: macOS Ventura 13.3.1
+## Running under: macOS Ventura 13.6
 ## 
 ## Matrix products: default
 ## BLAS:   /Library/Frameworks/R.framework/Versions/4.2-arm64/Resources/lib/libRblas.0.dylib
@@ -407,30 +407,30 @@ sessionInfo()
 ## [8] base     
 ## 
 ## other attached packages:
-##  [1] reshape2_1.4.4     jtools_2.2.1       RColorBrewer_1.1-3 naniar_1.0.0      
+##  [1] reshape2_1.4.4     jtools_2.2.2       RColorBrewer_1.1-3 naniar_1.0.0      
 ##  [5] UpSetR_1.4.0       glmnet_4.1-7       boot_1.3-28.1      sjlabelled_1.2.0  
-##  [9] memisc_0.99.31.6   MASS_7.3-58.2      lattice_0.20-45    labelled_2.11.0   
-## [13] factoextra_1.0.7   plyr_1.8.8         survey_4.2-1       survival_3.5-3    
-## [17] Matrix_1.5-3       lubridate_1.9.2    forcats_1.0.0      stringr_1.5.0     
+##  [9] memisc_0.99.31.6   MASS_7.3-60        lattice_0.21-8     labelled_2.12.0   
+## [13] factoextra_1.0.7   plyr_1.8.8         survey_4.2-1       survival_3.5-5    
+## [17] Matrix_1.5-4.1     lubridate_1.9.2    forcats_1.0.0      stringr_1.5.0     
 ## [21] dplyr_1.1.2        purrr_1.0.1        readr_2.1.4        tidyr_1.3.0       
 ## [25] tibble_3.2.1       ggplot2_3.4.2      tidyverse_2.0.0   
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] sass_0.4.6        bit64_4.0.5       vroom_1.6.3       jsonlite_1.8.4   
-##  [5] splines_4.2.3     foreach_1.5.2     carData_3.0-5     bslib_0.4.2      
+##  [1] sass_0.4.7        bit64_4.0.5       vroom_1.6.3       jsonlite_1.8.7   
+##  [5] splines_4.2.3     foreach_1.5.2     carData_3.0-5     bslib_0.5.0      
 ##  [9] highr_0.10        pander_0.6.5      yaml_2.3.7        ggrepel_0.9.3    
-## [13] pillar_1.9.0      glue_1.6.2        visdat_0.6.0      digest_0.6.31    
-## [17] colorspace_2.1-0  htmltools_0.5.5   pkgconfig_2.0.3   haven_2.5.2      
+## [13] pillar_1.9.0      glue_1.6.2        visdat_0.6.0      digest_0.6.33    
+## [17] colorspace_2.1-0  htmltools_0.5.5   pkgconfig_2.0.3   haven_2.5.3      
 ## [21] scales_1.2.1      tzdb_0.4.0        timechange_0.2.0  farver_2.1.1     
 ## [25] generics_0.1.3    car_3.1-2         cachem_1.0.8      withr_2.5.0      
 ## [29] cli_3.6.1         magrittr_2.0.3    crayon_1.5.2      evaluate_0.21    
 ## [33] fansi_1.0.4       textshaping_0.3.6 tools_4.2.3       data.table_1.14.8
 ## [37] hms_1.1.3         mitools_2.4       lifecycle_1.0.3   munsell_0.5.0    
 ## [41] compiler_4.2.3    jquerylib_0.1.4   systemfonts_1.0.4 rlang_1.1.1      
-## [45] iterators_1.0.14  rstudioapi_0.14   labeling_0.4.2    rmarkdown_2.21   
+## [45] iterators_1.0.14  rstudioapi_0.15.0 labeling_0.4.2    rmarkdown_2.23   
 ## [49] gtable_0.3.3      codetools_0.2-19  abind_1.4-5       DBI_1.1.3        
-## [53] R6_2.5.1          gridExtra_2.3     knitr_1.42        bit_4.0.5        
-## [57] fastmap_1.1.1     utf8_1.2.3        ragg_1.2.5        insight_0.19.2   
-## [61] shape_1.4.6       stringi_1.7.12    parallel_4.2.3    Rcpp_1.0.10      
-## [65] vctrs_0.6.2       tidyselect_1.2.0  xfun_0.39
+## [53] R6_2.5.1          gridExtra_2.3     knitr_1.43        bit_4.0.5        
+## [57] fastmap_1.1.1     utf8_1.2.3        ragg_1.2.5        insight_0.19.3   
+## [61] shape_1.4.6       stringi_1.7.12    parallel_4.2.3    Rcpp_1.0.11      
+## [65] vctrs_0.6.3       tidyselect_1.2.0  xfun_0.39
 ```

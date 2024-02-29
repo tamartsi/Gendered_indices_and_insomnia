@@ -279,7 +279,7 @@ library(reshape2)
 
 
 ```r
-folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gender_measure"
+folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gendered_indices"
 data_with_sleep <- read_csv(file.path(folder_path, "Data/sol_sofer_sorajja_joon_covariates_20220810.csv"))
 ```
 
@@ -341,13 +341,13 @@ cont_vars  <- c( "Language_acculturation",
                   "Social_acculturation",
                  "Ethnic_identity_score", 
                   "STAI10",
-                  "CESD")
+                  "CESD9")
 
 binary_vars  <- c("Language_pref",
                  "Current_Health_insurance")
 ```
 
-# functions to extract summarized results from analysis, when gender is exposure
+# functions to extract summarized results from analysis, when sex is exposure
 
 ```r
 extract_mult_out <- function(mod, exposure, out_name, level_names, round_digit = 2){
@@ -388,7 +388,7 @@ extract_one_out <- function(mod, exposure, out_name, exponentiate = TRUE, round_
 }
 ```
 
-# Prepare a table of results: gender is exposure
+# Prepare a table of results: sex is exposure
 
 
 ```r
@@ -396,10 +396,10 @@ all_out <- vector(mode = "list", length = length(multi_vars) + length(single_var
 ind <- 1
 
 for (var in multi_vars){
-  vglm_mod <- svy_vglm(formula = as.formula(paste0(var, "~Gender+Age+Center+Background")), design = sleepDesign, family = multinomial(refLevel = 1), drop.unused.levels = TRUE)
+  vglm_mod <- svy_vglm(formula = as.formula(paste0(var, "~Sex+Age+Center+Background")), design = sleepDesign, family = multinomial(refLevel = 1), drop.unused.levels = TRUE)
   
   all_out[[ind]] <- extract_mult_out(vglm_mod, 
-                                     exposure = "Gender", 
+                                     exposure = "Sex", 
                                      out_name  = var, 
                                      level_names  = levels(dat[[var]])[-1])
   ind <- ind + 1
@@ -414,29 +414,29 @@ for (var in multi_vars){
 
 ```r
 for (var in cont_vars){
-  mod <- svyglm(formula = as.formula(paste0(var, "~Gender+Age+Center+Background")), design = sleepDesign, family = quasipoisson())
+  mod <- svyglm(formula = as.formula(paste0(var, "~Sex+Age+Center+Background")), design = sleepDesign, family = quasipoisson())
   
   all_out[[ind]] <- extract_one_out(mod, 
-                                     exposure = "Gender", 
+                                     exposure = "Sex", 
                                      out_name  = var, 
                                     exponentiate = FALSE)
   ind <- ind + 1
 }
 
 for (var in binary_vars){
-  mod <- svyglm(formula = as.formula(paste0(var, "~Gender+Age+Center+Background")), design = sleepDesign, family = quasibinomial())
+  mod <- svyglm(formula = as.formula(paste0(var, "~Sex+Age+Center+Background")), design = sleepDesign, family = quasibinomial())
   
   all_out[[ind]] <- extract_one_out(mod, 
-                                     exposure = "Gender", 
+                                     exposure = "Sex", 
                                      out_name  = var, 
                                     exponentiate= TRUE)
   ind <- ind + 1
 }
 
 
-gender_tab <- do.call(rbind, all_out)
-rownames(gender_tab) <- paste0("r", 1:nrow(gender_tab))
-print(gender_tab)
+sex_tab <- do.call(rbind, all_out)
+rownames(sex_tab) <- paste0("r", 1:nrow(sex_tab))
+print(sex_tab)
 ```
 
 ```
@@ -453,15 +453,15 @@ print(gender_tab)
 ## r10                                               Income_level: More than $75,000
 ## r11                        Employment_status: Employed part-time(<=35 hours/week)
 ## r12                         Employment_status: Employed full-time(>35 hours/week)
-## r13                                                                 Education: 12
-## r14                                                                Education: >12
+## r13                                    Education: At most high school diploma/GED
+## r14                                       Education: Greater than high school/GED
 ## r15                                                 Years_in_US: 10 Years or More
 ## r16                                                          Years_in_US: US born
 ## r17                                                        Language_acculturation
 ## r18                                                          Social_acculturation
 ## r19                                                         Ethnic_identity_score
 ## r20                                                                        STAI10
-## r21                                                                          CESD
+## r21                                                                         CESD9
 ## r22                                                                 Language_pref
 ## r23                                                      Current_Health_insurance
 ##       est            CI     pval
@@ -491,7 +491,7 @@ print(gender_tab)
 ```
 
 ```r
-write.csv(gender_tab, file = file.path(folder_path, "Results/All_vars_assoc_gender.csv"))
+write.csv(sex_tab, file = file.path(folder_path, "Results/All_vars_assoc_sex.csv"))
 ```
 
 # functions to extract summarized results when insomnia is outcome
@@ -530,7 +530,7 @@ extract_one_exp <- function(mod, exposure, round_digit = 2){
 }
 ```
 
-# Prepare a table of results: insomnia is outcome, gender unadjusted
+# Prepare a table of results: insomnia is outcome, sex unadjusted
 
 
 ```r
@@ -559,9 +559,9 @@ for (var in c(cont_vars, binary_vars)){
 }
 
 
-insomnia_no_gender_tab <- do.call(rbind, all_out)
-rownames(insomnia_no_gender_tab) <- paste0("r", 1:nrow(gender_tab))
-print(insomnia_no_gender_tab)
+insomnia_no_sex_tab <- do.call(rbind, all_out)
+rownames(insomnia_no_sex_tab) <- paste0("r", 1:nrow(sex_tab))
+print(insomnia_no_sex_tab)
 ```
 
 ```
@@ -578,15 +578,15 @@ print(insomnia_no_gender_tab)
 ## r10                                               Income_level: More than $75,000
 ## r11                        Employment_status: Employed part-time(<=35 hours/week)
 ## r12                         Employment_status: Employed full-time(>35 hours/week)
-## r13                                                                 Education: 12
-## r14                                                                Education: >12
+## r13                                    Education: At most high school diploma/GED
+## r14                                       Education: Greater than high school/GED
 ## r15                                                 Years_in_US: 10 Years or More
 ## r16                                                          Years_in_US: US born
 ## r17                                                        Language_acculturation
 ## r18                                                          Social_acculturation
 ## r19                                                         Ethnic_identity_score
 ## r20                                                                        STAI10
-## r21                                                                          CESD
+## r21                                                                         CESD9
 ## r22                                                                 Language_pref
 ## r23                                                      Current_Health_insurance
 ##      est          CI     pval
@@ -616,11 +616,11 @@ print(insomnia_no_gender_tab)
 ```
 
 ```r
-write.csv(insomnia_no_gender_tab, file = file.path(folder_path, "Results/All_vars_assoc_insomnia_no_gender.csv"))
+write.csv(insomnia_no_sex_tab, file = file.path(folder_path, "Results/All_vars_assoc_insomnia_no_sex.csv"))
 ```
 
 
-# Prepare a table of results: insomnia is outcome, gender adjusted
+# Prepare a table of results: insomnia is outcome, sex adjusted
 
 
 ```r
@@ -628,7 +628,7 @@ all_out <- vector(mode = "list", length = length(multi_vars) + length(single_var
 ind <- 1
 
 for (var in multi_vars){
-   mod <- svyglm(formula = as.formula(paste0("Insomnia~Gender + Age+Center+Background+", var)), 
+   mod <- svyglm(formula = as.formula(paste0("Insomnia~Sex + Age+Center+Background+", var)), 
                  design = sleepDesign, family = quasibinomial())
    
 
@@ -640,7 +640,7 @@ for (var in multi_vars){
 
 
 for (var in c(cont_vars, binary_vars)){
-  mod <- svyglm(formula = as.formula(paste0("Insomnia~Gender+Age+Center+Background+", var)), 
+  mod <- svyglm(formula = as.formula(paste0("Insomnia~Sex+Age+Center+Background+", var)), 
                 design = sleepDesign, family = quasibinomial())
   
   all_out[[ind]] <- extract_one_exp(mod, 
@@ -649,9 +649,9 @@ for (var in c(cont_vars, binary_vars)){
 }
 
 
-insomnia_gender_adj_tab <- do.call(rbind, all_out)
-rownames(insomnia_gender_adj_tab) <- paste0("r", 1:nrow(gender_tab))
-print(insomnia_gender_adj_tab)
+insomnia_sex_adj_tab <- do.call(rbind, all_out)
+rownames(insomnia_sex_adj_tab) <- paste0("r", 1:nrow(sex_tab))
+print(insomnia_sex_adj_tab)
 ```
 
 ```
@@ -668,15 +668,15 @@ print(insomnia_gender_adj_tab)
 ## r10                                               Income_level: More than $75,000
 ## r11                        Employment_status: Employed part-time(<=35 hours/week)
 ## r12                         Employment_status: Employed full-time(>35 hours/week)
-## r13                                                                 Education: 12
-## r14                                                                Education: >12
+## r13                                    Education: At most high school diploma/GED
+## r14                                       Education: Greater than high school/GED
 ## r15                                                 Years_in_US: 10 Years or More
 ## r16                                                          Years_in_US: US born
 ## r17                                                        Language_acculturation
 ## r18                                                          Social_acculturation
 ## r19                                                         Ethnic_identity_score
 ## r20                                                                        STAI10
-## r21                                                                          CESD
+## r21                                                                         CESD9
 ## r22                                                                 Language_pref
 ## r23                                                      Current_Health_insurance
 ##      est          CI     pval
@@ -706,7 +706,7 @@ print(insomnia_gender_adj_tab)
 ```
 
 ```r
-write.csv(insomnia_gender_adj_tab, file = file.path(folder_path, "Results/All_vars_assoc_insomnia_gender_adj.csv"))
+write.csv(insomnia_sex_adj_tab, file = file.path(folder_path, "Results/All_vars_assoc_insomnia_sex_adj.csv"))
 ```
 
 
@@ -717,16 +717,16 @@ For the heatmap, we will consolidate results from all models. We will use the lo
 
 ```r
 # our 3 DFs with results are
-# gender_tab
-# insomnia_no_gender_tab
-# insomnia_gender_adj_tab
+# sex_tab
+# insomnia_no_sex_tab
+# insomnia_sex_adj_tab
 
-heatmap_dat <- data.frame(Gender = gender_tab$est, 
-                          Insomnia_gender_unadjusted = insomnia_no_gender_tab$est,
-                          Insomnia_gender_adjusted = insomnia_gender_adj_tab$est)
-rownames(heatmap_dat) <- gender_tab$outcome
+heatmap_dat <- data.frame(Sex = sex_tab$est, 
+                          Insomnia_sex_unadjusted = insomnia_no_sex_tab$est,
+                          Insomnia_sex_adjusted = insomnia_sex_adj_tab$est)
+rownames(heatmap_dat) <- sex_tab$outcome
 # check:
-all(gender_tab$outcome == insomnia_gender_adj_tab$exposure) # TRUE
+all(sex_tab$outcome == insomnia_sex_adj_tab$exposure) # TRUE
 ```
 
 ```
@@ -734,16 +734,15 @@ all(gender_tab$outcome == insomnia_gender_adj_tab$exposure) # TRUE
 ```
 
 ```r
-heatmap_dat$Insomnia_gender_unadjusted <- log(heatmap_dat$Insomnia_gender_unadjusted)
-heatmap_dat$Insomnia_gender_adjusted <- log(heatmap_dat$Insomnia_gender_adjusted)
-inds_transform_gender <- which(!is.element(rownames(heatmap_dat), cont_vars))
-heatmap_dat$Gender[inds_transform_gender] <- log(heatmap_dat$Gender[inds_transform_gender] )
+heatmap_dat$Insomnia_sex_unadjusted <- log(heatmap_dat$Insomnia_sex_unadjusted)
+heatmap_dat$Insomnia_sex_adjusted <- log(heatmap_dat$Insomnia_sex_adjusted)
+inds_transform_sex <- which(!is.element(rownames(heatmap_dat), cont_vars))
+heatmap_dat$Sex[inds_transform_sex] <- log(heatmap_dat$Sex[inds_transform_sex] )
 
 # change some of variables names in the heatmap
-rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Language_acculturation")] <- "Short language acculturation scale"
-rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Social_acculturation")] <- "Short social acculturation scale"
+rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Language_acculturation")] <- "SHAS language acculturation subscale"
+rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Social_acculturation")] <- "SHAS social acculturation subscale"
 rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Ethnic_identity_score")] <- "Ethnic identification score"
-rownames(heatmap_dat)[which(rownames(heatmap_dat) == "CESD")] <- "CESD9"
 
 rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Current_Health_insurance")] <- "Has current health insurance"
 
@@ -751,12 +750,12 @@ rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Language_pref")] <- "Langu
 
 rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Occupation: Professional/technical, administrative/executive, or office staff")] <- "Occupation: Professional/technical"
 
-rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Employment_status: Employed part-time(<=35 hours/week)")] <- "Employment: part-time(<=35 hours/week)"
+rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Employment status: Employed part-time(<=35 hours/week)")] <- "Employment: part-time(<=35 hours/week)"
 
-rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Employment_status: Employed full-time(>35 hours/week)")] <- "Employment: full-time(>35 hours/week)"
+rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Employment status: Employed full-time(>35 hours/week)")] <- "Employment: full-time(>35 hours/week)"
 
-rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Marital_status: Married or living with a partner")] <- "Married or living with a partner"
-rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Marital_status: Separated,divorced,or widow(er)")] <- "Separated,divorced,or widow(er)"
+rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Marital status: Married or living with a partner")] <- "Married or living with a partner"
+rownames(heatmap_dat)[which(rownames(heatmap_dat) == "Marital status: Separated,divorced,or widow(er)")] <- "Separated,divorced,or widow(er)"
 
 
 heatmap_dat$y <- rownames(heatmap_dat)
@@ -775,17 +774,17 @@ heatmap_dat$y <- factor(heatmap_dat$y, levels = heatmap_dat$y[rev(c(1:2,  #marit
                                                                 20:21))]) # psychological
 
 heatmap_long <- pivot_longer(heatmap_dat, 
-                             cols = c("Gender", "Insomnia_gender_unadjusted", "Insomnia_gender_adjusted"),
+                             cols = c("Sex", "Insomnia_sex_unadjusted", "Insomnia_sex_adjusted"),
                              names_to = "x",
                              values_to = "value")
 
-heatmap_long$x[which(heatmap_long$x == "Insomnia_gender_adjusted")] <- "Insomnia: sex adjusted" # "Insomnia:\n sex\n adjusted"
-heatmap_long$x[which(heatmap_long$x == "Insomnia_gender_unadjusted")] <- "Insomnia: unadjusted to sex" # "Insomnia:\n unadjusted\n to sex"
-heatmap_long$x[which(heatmap_long$x == "Gender")] <- "Male sex" #"Male\n sex"
+heatmap_long$x[which(heatmap_long$x == "Insomnia_sex_adjusted")] <- "Insomnia: sex adjusted" # "Insomnia:\n sex\n adjusted"
+heatmap_long$x[which(heatmap_long$x == "Insomnia_sex_unadjusted")] <- "Insomnia: unadjusted to sex" # "Insomnia:\n unadjusted\n to sex"
+heatmap_long$x[which(heatmap_long$x == "Sex")] <- "Male sex" #"Male\n sex"
 
 ggplot(heatmap_long, aes(x = x, y = y)) + 
     geom_tile(aes(fill = value)) + 
-      ggtitle("Adjusted associations with sex and insomnia") +   
+     # ggtitle("Adjusted associations with sex and insomnia") +   
       scale_fill_gradient2(low = "navy", mid = "white", high = "red") + 
       ylab("") + xlab("") + 
       theme(axis.text.x = element_text( hjust= 0, size = 12), 
@@ -796,7 +795,7 @@ ggplot(heatmap_long, aes(x = x, y = y)) +
 ![](4_create_table2_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
 
 ```r
-ggsave(file = file.path(folder_path, "Results/Heatmap_sex_insomnia_assoc.pdf"), width = 7, height = 6)
+ggsave(file = file.path(folder_path, "Results/Heatmap_sex_insomnia_assoc.pdf"), width = 9, height = 6)
 ```
 
 
@@ -812,7 +811,7 @@ sessionInfo()
 ```
 ## R version 4.2.3 (2023-03-15)
 ## Platform: aarch64-apple-darwin20 (64-bit)
-## Running under: macOS Ventura 13.3.1
+## Running under: macOS Ventura 13.6
 ## 
 ## Matrix products: default
 ## BLAS:   /Library/Frameworks/R.framework/Versions/4.2-arm64/Resources/lib/libRblas.0.dylib
@@ -826,32 +825,32 @@ sessionInfo()
 ##  [8] datasets  methods   base     
 ## 
 ## other attached packages:
-##  [1] reshape2_1.4.4     jtools_2.2.1       svyVGAM_1.2        VGAM_1.1-8        
+##  [1] reshape2_1.4.4     jtools_2.2.2       svyVGAM_1.2        VGAM_1.1-9        
 ##  [5] RColorBrewer_1.1-3 naniar_1.0.0       UpSetR_1.4.0       glmnet_4.1-7      
 ##  [9] boot_1.3-28.1      mi_1.1             sjlabelled_1.2.0   memisc_0.99.31.6  
-## [13] MASS_7.3-58.2      lattice_0.20-45    tableone_0.13.2    labelled_2.11.0   
-## [17] factoextra_1.0.7   plyr_1.8.8         survey_4.2-1       survival_3.5-3    
-## [21] Matrix_1.5-3       lubridate_1.9.2    forcats_1.0.0      stringr_1.5.0     
+## [13] MASS_7.3-60        lattice_0.21-8     tableone_0.13.2    labelled_2.12.0   
+## [17] factoextra_1.0.7   plyr_1.8.8         survey_4.2-1       survival_3.5-5    
+## [21] Matrix_1.5-4.1     lubridate_1.9.2    forcats_1.0.0      stringr_1.5.0     
 ## [25] dplyr_1.1.2        purrr_1.0.1        readr_2.1.4        tidyr_1.3.0       
 ## [29] tibble_3.2.1       ggplot2_3.4.2      tidyverse_2.0.0   
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] nlme_3.1-162      bit64_4.0.5       insight_0.19.2    tools_4.2.3      
-##  [5] bslib_0.4.2       utf8_1.2.3        R6_2.5.1          DBI_1.1.3        
+##  [1] nlme_3.1-162      bit64_4.0.5       insight_0.19.3    tools_4.2.3      
+##  [5] bslib_0.5.0       utf8_1.2.3        R6_2.5.1          DBI_1.1.3        
 ##  [9] colorspace_2.1-0  withr_2.5.0       tidyselect_1.2.0  gridExtra_2.3    
 ## [13] bit_4.0.5         compiler_4.2.3    textshaping_0.3.6 cli_3.6.1        
-## [17] labeling_0.4.2    sass_0.4.6        scales_1.2.1      systemfonts_1.0.4
-## [21] digest_0.6.31     minqa_1.2.5       rmarkdown_2.21    pkgconfig_2.0.3  
-## [25] htmltools_0.5.5   lme4_1.1-33       highr_0.10        fastmap_1.1.1    
-## [29] rlang_1.1.1       rstudioapi_0.14   farver_2.1.1      shape_1.4.6      
-## [33] jquerylib_0.1.4   generics_0.1.3    jsonlite_1.8.4    vroom_1.6.3      
-## [37] car_3.1-2         magrittr_2.0.3    Rcpp_1.0.10       munsell_0.5.0    
+## [17] labeling_0.4.2    sass_0.4.7        scales_1.2.1      systemfonts_1.0.4
+## [21] digest_0.6.33     minqa_1.2.5       rmarkdown_2.23    pkgconfig_2.0.3  
+## [25] htmltools_0.5.5   lme4_1.1-34       highr_0.10        fastmap_1.1.1    
+## [29] rlang_1.1.1       rstudioapi_0.15.0 farver_2.1.1      shape_1.4.6      
+## [33] jquerylib_0.1.4   generics_0.1.3    jsonlite_1.8.7    vroom_1.6.3      
+## [37] car_3.1-2         magrittr_2.0.3    Rcpp_1.0.11       munsell_0.5.0    
 ## [41] fansi_1.0.4       abind_1.4-5       lifecycle_1.0.3   visdat_0.6.0     
 ## [45] stringi_1.7.12    yaml_2.3.7        carData_3.0-5     parallel_4.2.3   
-## [49] ggrepel_0.9.3     crayon_1.5.2      haven_2.5.2       pander_0.6.5     
-## [53] hms_1.1.3         knitr_1.42        pillar_1.9.0      codetools_0.2-19 
+## [49] ggrepel_0.9.3     crayon_1.5.2      haven_2.5.3       pander_0.6.5     
+## [53] hms_1.1.3         knitr_1.43        pillar_1.9.0      codetools_0.2-19 
 ## [57] glue_1.6.2        evaluate_0.21     mitools_2.4       data.table_1.14.8
-## [61] vctrs_0.6.2       nloptr_2.0.3      tzdb_0.4.0        foreach_1.5.2    
+## [61] vctrs_0.6.3       nloptr_2.0.3      tzdb_0.4.0        foreach_1.5.2    
 ## [65] gtable_0.3.3      cachem_1.0.8      xfun_0.39         coda_0.19-4      
 ## [69] ragg_1.2.5        arm_1.13-1        iterators_1.0.14  timechange_0.2.0
 ```
