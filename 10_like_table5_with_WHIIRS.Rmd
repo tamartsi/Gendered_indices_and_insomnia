@@ -1,5 +1,5 @@
 ---
-title: "Prepare table 4: sex and gendered indices association with insomnia"
+title: "Prepare like table 5: sex and gendered indices association with WHIIRS"
 output: 
   html_document:
     toc: true
@@ -140,7 +140,7 @@ model3_sex_strat <-  setdiff(model3,  "Sex")
 
 ```
 
-# prepare table 4: evaluate models
+# prepare "like" table 5: evaluate models
 ```{r}
 
 # function to extract the estimated effect of an exposure on a binary outcome
@@ -151,9 +151,9 @@ extract_one_exp <- function(mod, exposure, round_digit = 2){
   ind <- grep(exposure, rownames(est))
   
   df_out <- data.frame(exposure = exposure, 
-                       est = round(exp(est[ind, "Estimate"]),round_digit), 
-                       CI = paste0("(", round(exp(confint[ind, 1]), round_digit),
-                                   ",",round(exp(confint[ind, 2]), round_digit) , ")"),
+                       est = round(est[ind, "Estimate"],round_digit), 
+                       CI = paste0("(", round(confint[ind, 1], round_digit),
+                                   ",",round(confint[ind, 2], round_digit) , ")"),
                        pval = formatC(est[ind, "Pr(>|t|)"], digits = round_digit, format = "E"))
  
 
@@ -162,7 +162,7 @@ extract_one_exp <- function(mod, exposure, round_digit = 2){
 
 
 
-table4 <- data.frame(row.names = c(paste0("all_model_",1:5 ),
+table5 <- data.frame(row.names = c(paste0("all_model_",1:5 ),
                                    paste0("male_model_", 2:3),
                                    paste0("female_model_", 2:3)),
                      male_eff = rep(NA, 9),
@@ -173,29 +173,29 @@ table4 <- data.frame(row.names = c(paste0("all_model_",1:5 ),
                      index_pval = NA)
 
 # fit models (sex combined)
-model1_fit <- svyglm(formula = as.formula(paste0("Insomnia~", paste(model1, collapse = "+"))), design = survey_cc, family = quasibinomial())
+model1_fit <- svyglm(formula = as.formula(paste0("WHIIRS~", paste(model1, collapse = "+"))), design = survey_cc, family = gaussian())
 
-model2_fit <- svyglm(formula = as.formula(paste0("Insomnia~", paste(model2, collapse = "+"))), design = survey_cc, family = quasibinomial())
+model2_fit <- svyglm(formula = as.formula(paste0("WHIIRS~", paste(model2, collapse = "+"))), design = survey_cc, family = gaussian())
 
-model3_fit <- svyglm(formula = as.formula(paste0("Insomnia~", paste(model3, collapse = "+"))), design = survey_cc, family = quasibinomial())
+model3_fit <- svyglm(formula = as.formula(paste0("WHIIRS~", paste(model3, collapse = "+"))), design = survey_cc, family = gaussian())
 
-model4_fit <- svyglm(formula = as.formula(paste0("Insomnia~", paste(model4, collapse = "+"))), design = survey_cc, family = quasibinomial())
+model4_fit <- svyglm(formula = as.formula(paste0("WHIIRS~", paste(model4, collapse = "+"))), design = survey_cc, family = gaussian())
 
-model5_fit <- svyglm(formula = as.formula(paste0("Insomnia~", paste(model5, collapse = "+"))), design = survey_cc, family = quasibinomial())
+model5_fit <- svyglm(formula = as.formula(paste0("WHIIRS~", paste(model5, collapse = "+"))), design = survey_cc, family = gaussian())
 
 for (i in 1:5){
-  table4[paste0("all_model_", i), 
+  table5[paste0("all_model_", i), 
          c("male_eff", "male_CI", "male_pval")] <- 
              extract_one_exp(get(paste0("model", i, "_fit")) , 
                                  exposure = "Sex")[c("est", "CI", "pval")]
 }
 
-table4["all_model_2",
+table5["all_model_2",
        c("index_eff", "index_CI",  "index_pval")]  <- 
           extract_one_exp(get(paste0("model2_fit")) , 
                                  exposure = "GISE_scaled")[c("est", "CI", "pval")]
 
-table4["all_model_3",
+table5["all_model_3",
        c("index_eff", "index_CI", "index_pval")]  <- 
           extract_one_exp(get(paste0("model3_fit")) , 
                                  exposure = "GIPSE_scaled")[c("est", "CI", "pval")]
@@ -204,18 +204,18 @@ table4["all_model_3",
 survey_cc_male <- subset(survey_cc, Sex == "Male")
 survey_cc_female <- subset(survey_cc, Sex == "Female")
 
-model2_male_fit <- svyglm(formula = as.formula(paste0("Insomnia~", paste(model2_sex_strat, collapse = "+"))), design = survey_cc_male, family = quasibinomial())
+model2_male_fit <- svyglm(formula = as.formula(paste0("WHIIRS~", paste(model2_sex_strat, collapse = "+"))), design = survey_cc_male, family = gaussian())
 
-model3_male_fit <- svyglm(formula = as.formula(paste0("Insomnia~", paste(model3_sex_strat, collapse = "+"))), design = survey_cc_male, family = quasibinomial())
+model3_male_fit <- svyglm(formula = as.formula(paste0("WHIIRS~", paste(model3_sex_strat, collapse = "+"))), design = survey_cc_male, family = gaussian())
 
-model2_female_fit <- svyglm(formula = as.formula(paste0("Insomnia~", paste(model2_sex_strat, collapse = "+"))), design = survey_cc_female, family = quasibinomial())
+model2_female_fit <- svyglm(formula = as.formula(paste0("WHIIRS~", paste(model2_sex_strat, collapse = "+"))), design = survey_cc_female, family = gaussian())
 
-model3_female_fit <- svyglm(formula = as.formula(paste0("Insomnia~", paste(model3_sex_strat, collapse = "+"))), design = survey_cc_female, family = quasibinomial())
+model3_female_fit <- svyglm(formula = as.formula(paste0("WHIIRS~", paste(model3_sex_strat, collapse = "+"))), design = survey_cc_female, family = gaussian())
 
 for (i in 2:3){
   for (sex in c("male", "female")){
     type <- ifelse(i == 2, "GISE", "GIPSE")
-      table4[paste0(sex, "_model_", i), 
+      table5[paste0(sex, "_model_", i), 
          c("index_eff", "index_CI", "index_pval")]  <- 
           extract_one_exp(get(paste0("model", i, "_", sex, "_fit")) , 
                                  exposure = paste0(type, "_scaled"))[c("est", "CI", "pval")]
@@ -224,9 +224,9 @@ for (i in 2:3){
 
 }
 
-table4
+table5
 
-write.csv(table4, file = file.path(folder_path, "Results/Table4.csv"))
+write.csv(table5, file = file.path(folder_path, "Results/like_table5_whiirs.csv"))
 
 ```
 
@@ -237,7 +237,7 @@ Functions that will help us
 ```{r}
 # can't use the pool function from the MI package
 # instead write a function that fit a model on the 5 datasets, and applies Rubin's rule.
-# for simplicity, assume insomnia is outcome, assume 5 imputations
+# for simplicity, assume WHIIRS is outcome, assume 5 imputations
 
 rubins_rule <- function(ests, ses, round_digit = 2){
   vars <- ses^2
@@ -257,9 +257,10 @@ rubins_rule <- function(ests, ses, round_digit = 2){
   
   F_pval <- pf(F_test_stat, F_df1, F_df2, lower.tail = FALSE)
   
-  CI <- paste0("(", round(exp(pooled_est - 1.96*pooled_se), round_digit), ",", round(exp(pooled_est + 1.96*pooled_se), round_digit), ")")
+  CI <- paste0("(", round(pooled_est - 1.96*pooled_se, round_digit), ",", 
+               round(pooled_est + 1.96*pooled_se, round_digit), ")")
   
-  return(data.frame(est = round(exp(pooled_est), round_digit), CI = CI, pval = F_pval))
+  return(data.frame(est = round(pooled_est, round_digit), CI = CI, pval = F_pval))
   
 }
 
@@ -272,7 +273,7 @@ extract_one_exp_mi <- function(survey_imp,  model_vars, exposure,
   names(est) <- names(se) <-  imp_suffix
   for (i in 1:length(imp_suffix)){
     suffix <- imp_suffix[i]
-    cur_fit <- svyglm(formula = as.formula(paste0("Insomnia", suffix, "~", paste(paste0(model_vars, suffix), collapse = "+"))), design = survey_imp, family = quasibinomial())
+    cur_fit <- svyglm(formula = as.formula(paste0("WHIIRS", suffix, "~", paste(paste0(model_vars, suffix), collapse = "+"))), design = survey_imp, family = gaussian())
     
     fit_est <- summary(cur_fit)$coef
     ind_exp <- grep(exposure, rownames(fit_est))
@@ -307,7 +308,7 @@ And prepare the table using imputed data:
 
 
 
-table4_imp <- data.frame(row.names = c(paste0("all_model_",1:5 ),
+table5_imp <- data.frame(row.names = c(paste0("all_model_",1:5 ),
                                    paste0("male_model_", 2:3),
                                    paste0("female_model_", 2:3)),
                      male_eff = rep(NA, 9),
@@ -318,20 +319,20 @@ table4_imp <- data.frame(row.names = c(paste0("all_model_",1:5 ),
                      index_pval = NA)
 
 
-table4_imp["all_model_1", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model1, "Sex")[, c("est", "CI", "pval")]
+table5_imp["all_model_1", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model1, "Sex")[, c("est", "CI", "pval")]
 
-table4_imp["all_model_2", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model2, "Sex")[, c("est", "CI", "pval")]
+table5_imp["all_model_2", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model2, "Sex")[, c("est", "CI", "pval")]
 
-table4_imp["all_model_2", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp, model2, "GISE_scaled")[, c("est", "CI", "pval")]
+table5_imp["all_model_2", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp, model2, "GISE_scaled")[, c("est", "CI", "pval")]
 
-table4_imp["all_model_3", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model3, "Sex")[, c("est", "CI", "pval")]
+table5_imp["all_model_3", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model3, "Sex")[, c("est", "CI", "pval")]
 
-table4_imp["all_model_3", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp, model3, "GIPSE_scaled")[, c("est", "CI", "pval")]
+table5_imp["all_model_3", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp, model3, "GIPSE_scaled")[, c("est", "CI", "pval")]
 
 
-table4_imp["all_model_4", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model4, "Sex")[, c("est", "CI", "pval")]
+table5_imp["all_model_4", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model4, "Sex")[, c("est", "CI", "pval")]
 
-table4_imp["all_model_5", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model5, "Sex")[, c("est", "CI", "pval")]
+table5_imp["all_model_5", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model5, "Sex")[, c("est", "CI", "pval")]
 
 
 
@@ -340,20 +341,20 @@ survey_imp_female <- subset(survey_imp, Sex == "Female")
 
 
 
-table4_imp["male_model_2", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_male, setdiff(model2, "Sex"), "GISE_scaled")[, c("est", "CI", "pval")]
+table5_imp["male_model_2", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_male, setdiff(model2, "Sex"), "GISE_scaled")[, c("est", "CI", "pval")]
 
 
-table4_imp["male_model_3", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_male, setdiff(model3, "Sex"), "GIPSE_scaled")[, c("est", "CI", "pval")]
+table5_imp["male_model_3", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_male, setdiff(model3, "Sex"), "GIPSE_scaled")[, c("est", "CI", "pval")]
 
 
-table4_imp["female_model_2", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_female, setdiff(model2, "Sex"), "GISE_scaled")[, c("est", "CI", "pval")]
+table5_imp["female_model_2", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_female, setdiff(model2, "Sex"), "GISE_scaled")[, c("est", "CI", "pval")]
 
 
-table4_imp["female_model_3", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_female, setdiff(model3, "Sex"), "GIPSE_scaled")[, c("est", "CI", "pval")]
+table5_imp["female_model_3", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_female, setdiff(model3, "Sex"), "GIPSE_scaled")[, c("est", "CI", "pval")]
 
-table4_imp
+table5_imp
 
-write.csv(table4_imp, file = file.path(folder_path, "Results/Supp_table1.csv"))
+write.csv(table5_imp, file = file.path(folder_path, "Results/like_supp_table1_whiirs.csv"))
 
 ```
 
