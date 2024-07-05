@@ -11,7 +11,7 @@
 
 
 
-<title>Regression of WHIIRS and insomnia with sex, GISE/GIPSE, and their interaction</title>
+<title>Prepare a table providing associations of sociodemographic variables with insomnia by sex</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -348,22 +348,22 @@ display: none;
 
 
 
-<h1 class="title toc-ignore">Regression of WHIIRS and insomnia with sex,
-GISE/GIPSE, and their interaction</h1>
+<h1 class="title toc-ignore">Prepare a table providing associations of
+sociodemographic variables with insomnia by sex</h1>
 
 </div>
 
 <div id="TOC">
 <ul>
-<li><a href="#load-and-prepare-the-dataset" id="toc-load-and-prepare-the-dataset">Load and prepare the
-dataset</a></li>
-<li><a href="#add-scaled-indices-to-describe-effect-per-1-sd-increase" id="toc-add-scaled-indices-to-describe-effect-per-1-sd-increase">add
-scaled indices to describe effect per 1 SD increase</a></li>
-<li><a href="#prepare-model-variables" id="toc-prepare-model-variables">Prepare model variables</a></li>
-<li><a href="#evaluate-models-and-extract-results" id="toc-evaluate-models-and-extract-results">Evaluate models and extract
-results</a></li>
-<li><a href="#table-6-using-imputed-dataset-supplementary-table" id="toc-table-6-using-imputed-dataset-supplementary-table">Table 6 using
-imputed dataset (Supplementary Table ??)</a></li>
+<li><a href="#read-in-the-data" id="toc-read-in-the-data">Read in the
+data</a></li>
+<li><a href="#prepare-for-the-analysis" id="toc-prepare-for-the-analysis">Prepare for the analysis</a></li>
+<li><a href="#functions-to-extract-and-summarize-results-when-insomnia-is-outcome" id="toc-functions-to-extract-and-summarize-results-when-insomnia-is-outcome">functions
+to extract and summarize results when insomnia is outcome</a></li>
+<li><a href="#prepare-a-table-of-results-insomnia-is-outcome-by-sex-strata" id="toc-prepare-a-table-of-results-insomnia-is-outcome-by-sex-strata">Prepare
+a table of results: insomnia is outcome, by sex strata</a></li>
+<li><a href="#the-same-analysis-with-whiirs-as-the-outcome" id="toc-the-same-analysis-with-whiirs-as-the-outcome">The same analysis
+with WHIIRS as the outcome</a></li>
 </ul>
 </div>
 
@@ -416,6 +416,7 @@ imputed dataset (Supplementary Table ??)</a></li>
 library(factoextra)</code></pre>
 <pre><code>## Welcome! Want to learn more? See two factoextra-related books at https://goo.gl/ve3WBa</code></pre>
 <pre class="r"><code>library(labelled)
+library(tableone)
 library(memisc)</code></pre>
 <pre><code>## Loading required package: lattice
 ## Loading required package: MASS
@@ -483,6 +484,20 @@ library(memisc)</code></pre>
 ## The following object is masked from &#39;package:ggplot2&#39;:
 ## 
 ##     as_label</code></pre>
+<pre class="r"><code>library(mi)</code></pre>
+<pre><code>## Loading required package: stats4
+## mi (Version 1.1, packaged: 2022-06-05 05:31:15 UTC; ben)
+## mi  Copyright (C) 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015 Trustees of Columbia University
+## This program comes with ABSOLUTELY NO WARRANTY.
+## This is free software, and you are welcome to redistribute it
+## under the General Public License version 2 or later.
+## Execute RShowDoc(&#39;COPYING&#39;) for details.
+## 
+## Attaching package: &#39;mi&#39;
+## 
+## The following object is masked from &#39;package:tidyr&#39;:
+## 
+##     complete</code></pre>
 <pre class="r"><code>library(boot)</code></pre>
 <pre><code>## 
 ## Attaching package: &#39;boot&#39;
@@ -505,7 +520,28 @@ library(memisc)</code></pre>
 ##     histogram</code></pre>
 <pre class="r"><code>library(naniar)
 library(RColorBrewer)
-library(jtools)</code></pre>
+library(svyVGAM)</code></pre>
+<pre><code>## Loading required package: VGAM
+## Loading required package: splines
+## 
+## Attaching package: &#39;VGAM&#39;
+## 
+## The following objects are masked from &#39;package:boot&#39;:
+## 
+##     logit, simplex
+## 
+## The following object is masked from &#39;package:mi&#39;:
+## 
+##     multinomial
+## 
+## The following object is masked from &#39;package:memisc&#39;:
+## 
+##     Max
+## 
+## The following object is masked from &#39;package:survey&#39;:
+## 
+##     calibrate</code></pre>
+<pre class="r"><code>library(jtools)</code></pre>
 <pre><code>## 
 ## Attaching package: &#39;jtools&#39;
 ## 
@@ -519,339 +555,477 @@ library(jtools)</code></pre>
 ## The following object is masked from &#39;package:tidyr&#39;:
 ## 
 ##     smiths</code></pre>
-<div id="load-and-prepare-the-dataset" class="section level1">
-<h1>Load and prepare the dataset</h1>
+<div id="read-in-the-data" class="section level1">
+<h1>Read in the data</h1>
 <pre class="r"><code>folder_path &lt;- &quot;/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gendered_indices&quot;
-dat_no_indices &lt;- readRDS(file.path(folder_path, &quot;Data/Data_with_miss.Rds&quot;))
-
-# the data with missing values:
-# load the prepared dataset with indices
-dat_miss &lt;- readRDS(file.path(folder_path, &quot;Data/Data_complete_case_with_indices.Rds&quot;))
-
-
-# load the imputed dataset with indices
-dat_imp &lt;- readRDS(file.path(folder_path, &quot;Data/Data_imputed_with_indices.Rds&quot;))
-
-print(paste(&quot;The complete case dataset has&quot;, nrow(dat_miss), &quot;individuals&quot;))</code></pre>
-<pre><code>## [1] &quot;The complete case dataset has 13666 individuals&quot;</code></pre>
-<pre class="r"><code>print(paste(&quot;The imputed dataset has&quot;, nrow(dat_imp), &quot;individuals&quot;))</code></pre>
-<pre><code>## [1] &quot;The imputed dataset has 16415 individuals&quot;</code></pre>
-<pre class="r"><code># because of the survey sampling design, we need to &quot;merge&quot; 
-# the complete case dataset with design variables of the complete dataset
-dat &lt;- merge(dat_miss, 
-             dat_no_indices[,c(&quot;ID&quot;, &quot;STRAT&quot; ,&quot;PSU_ID&quot;, &quot;WEIGHT_FINAL_NORM_OVERALL&quot;)], 
-             by = c(&quot;ID&quot;, &quot;STRAT&quot; ,&quot;PSU_ID&quot;, &quot;WEIGHT_FINAL_NORM_OVERALL&quot;), all = TRUE)
-
-dat_imp &lt;- merge(dat_imp, 
-                 dat_no_indices[,c(&quot;ID&quot;, &quot;WEIGHT_FINAL_NORM_OVERALL&quot;, &quot;PSU_ID&quot;)], 
-                 by = c(&quot;ID&quot;))
-
-nrow(dat) == nrow(dat_imp)</code></pre>
-<pre><code>## [1] TRUE</code></pre>
+data_with_sleep &lt;- read_csv(file.path(folder_path, &quot;Data/sol_sofer_sorajja_joon_covariates_20220810.csv&quot;))</code></pre>
+<pre><code>## Warning: One or more parsing issues, call `problems()` on your data frame for details,
+## e.g.:
+##   dat &lt;- vroom(...)
+##   problems(dat)</code></pre>
+<pre><code>## Rows: 16415 Columns: 44
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## chr  (8): ID, CENTER, GENDER, BKGRD1_C7, SLEA7, WBEA1, WBEA5, WBEA10
+## dbl (36): STRAT, PSU_ID, WEIGHT_FINAL_NORM_OVERALL, AGE, US_BORN, BMI, STAI1...
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<pre class="r"><code># load the prepared dataset
+dat &lt;- readRDS(file.path(folder_path, &quot;Data/Data_with_miss.Rds&quot;))</code></pre>
 </div>
-<div id="add-scaled-indices-to-describe-effect-per-1-sd-increase" class="section level1">
-<h1>add scaled indices to describe effect per 1 SD increase</h1>
-<pre class="r"><code>survey_cc &lt;- svydesign(id = ~PSU_ID,
+<div id="prepare-for-the-analysis" class="section level1">
+<h1>Prepare for the analysis</h1>
+<pre class="r"><code># survey object
+survey_base &lt;- svydesign(id = ~PSU_ID,
                           strata = ~STRAT,
                           weights = ~WEIGHT_FINAL_NORM_OVERALL,
                           nest = TRUE,
                           data = dat)
-survey_cc &lt;- subset(survey_cc, complete.cases(dat))
+sleepDesign &lt;- subset(survey_base, complete.cases(dat))
 
-survey_imp &lt;- svydesign(id = ~PSU_ID,
-                          strata = ~STRAT,
-                          weights = ~WEIGHT_FINAL_NORM_OVERALL,
-                          nest = TRUE,
-                          data = dat_imp)
+sleepDesign_female &lt;- subset(sleepDesign, Sex == &quot;Female&quot;)
+sleepDesign_male &lt;- subset(sleepDesign, Sex == &quot;Male&quot;)
 
-cur_mean &lt;- svymean(~GISE, survey_cc)[1]
-cur_sd &lt;- sqrt(svyvar(~GISE, survey_cc)[1])
-dat_miss$GISE_scaled &lt;- (dat_miss$GISE - cur_mean)/cur_sd
+# baseline covariates to adjust for
+adj_vars &lt;- c(&quot;Age&quot;, &quot;Center&quot;, &quot;Background&quot;)
 
-cur_mean &lt;- svymean(~GIPSE, survey_cc)[1]
-cur_sd &lt;- sqrt(svyvar(~GIPSE, survey_cc)[1])
-dat_miss$GIPSE_scaled &lt;- (dat_miss$GIPSE - cur_mean)/cur_sd
+# multi-level variables to be analyzed in multinomial regression
+multi_vars &lt;- c(&quot;Marital_status&quot;, 
+                &quot;Occupation&quot;,
+                &quot;Income_level&quot;,
+                &quot;Employment_status&quot;, 
+                &quot;Education&quot;, 
+                &quot;Years_in_US&quot;)
+# not multi-level ones:
+single_vars  &lt;- c(&quot;Language_pref&quot;,
+                 &quot;Current_Health_insurance&quot;,
+                 &quot;Language_acculturation&quot;,
+                  &quot;Social_acculturation&quot;,
+                  &quot;Ethnic_identity_score&quot;, 
+                  &quot;STAI10&quot;,
+                  &quot;CESD&quot;)
 
-for (suffix in c(&quot;&quot;, &quot;.1&quot;, &quot;.2&quot;, &quot;.3&quot;, &quot;.4&quot;)){
-  cur_mean &lt;- svymean(as.formula(paste0(&quot;~GISE&quot;, suffix)), survey_imp)[1]
-  cur_sd &lt;- sqrt(svyvar(as.formula(paste0(&quot;~GISE&quot;, suffix)), survey_imp)[1])
-  dat_imp[[paste0(&quot;GISE_scaled&quot;, suffix)]] &lt;- (dat_imp[[paste0(&quot;GISE&quot;, suffix)]] - cur_mean)/cur_sd
+cont_vars  &lt;- c( &quot;Language_acculturation&quot;,
+                  &quot;Social_acculturation&quot;,
+                 &quot;Ethnic_identity_score&quot;, 
+                  &quot;STAI10&quot;,
+                  &quot;CESD9&quot;)
 
-  cur_mean &lt;- svymean(as.formula(paste0(&quot;~GIPSE&quot;, suffix)), survey_imp)[1]
-  cur_sd &lt;- sqrt(svyvar(as.formula(paste0(&quot;~GIPSE&quot;, suffix)), survey_imp)[1])
-  dat_imp[[paste0(&quot;GIPSE_scaled&quot;, suffix)]] &lt;- (dat_imp[[paste0(&quot;GIPSE&quot;, suffix)]] - cur_mean)/cur_sd
-}
-
-
-# recompute the survey objects:
-dat &lt;- merge(dat_miss, 
-             dat_no_indices[,c(&quot;ID&quot;, &quot;STRAT&quot; ,&quot;PSU_ID&quot;, &quot;WEIGHT_FINAL_NORM_OVERALL&quot;)], 
-             by = c(&quot;ID&quot;, &quot;STRAT&quot; ,&quot;PSU_ID&quot;, &quot;WEIGHT_FINAL_NORM_OVERALL&quot;), all = TRUE)
-
-survey_cc &lt;- svydesign(id = ~PSU_ID,
-                          strata = ~STRAT,
-                          weights = ~WEIGHT_FINAL_NORM_OVERALL,
-                          nest = TRUE,
-                          data = dat)
-survey_cc &lt;- subset(survey_cc, complete.cases(dat))
-
-survey_imp &lt;- svydesign(id = ~PSU_ID,
-                          strata = ~STRAT,
-                          weights = ~WEIGHT_FINAL_NORM_OVERALL,
-                          nest = TRUE,
-                          data = dat_imp)</code></pre>
+binary_vars  &lt;- c(&quot;Language_pref&quot;,
+                 &quot;Current_Health_insurance&quot;)</code></pre>
 </div>
-<div id="prepare-model-variables" class="section level1">
-<h1>Prepare model variables</h1>
-<pre class="r"><code>model1 &lt;- c(&quot;Age&quot;, &quot;Center&quot;, &quot;Background&quot;, &quot;Sex*GISE_scaled&quot;)
-model2 &lt;- c(&quot;Age&quot;, &quot;Center&quot;, &quot;Background&quot;, &quot;Sex*GIPSE_scaled&quot;)</code></pre>
-</div>
-<div id="evaluate-models-and-extract-results" class="section level1">
-<h1>Evaluate models and extract results</h1>
-<pre class="r"><code># function to extract the estimated effect of an exposure on a binary outcome
-extract_one_exp_logistic &lt;- function(mod, exposure, round_digit = 2){
-   est &lt;- summary(mod)$coef
-   confint &lt;- confint(mod)
+<div id="functions-to-extract-and-summarize-results-when-insomnia-is-outcome" class="section level1">
+<h1>functions to extract and summarize results when insomnia is
+outcome</h1>
+<pre class="r"><code>extract_mult_exp &lt;- function(mod, exposure, level_names, round_digit = 2, insomnia = TRUE){
+  est &lt;- summary(mod)$coef
+  confint &lt;- confint(mod)
   
-  ind &lt;- which(exposure ==  rownames(est))
+  inds &lt;- grep(exposure, rownames(est))
   
-  df_out &lt;- data.frame(exposure = exposure, 
-                       est = round(exp(est[ind, &quot;Estimate&quot;]),round_digit), 
-                       CI = paste0(&quot;(&quot;, round(exp(confint[ind, 1]), round_digit),
-                                   &quot;,&quot;,round(exp(confint[ind, 2]), round_digit) , &quot;)&quot;),
-                       pval = formatC(est[ind, &quot;Pr(&gt;|t|)&quot;], digits = round_digit, format = &quot;E&quot;))
- 
-
+  if (insomnia == TRUE){
+   df_out &lt;- data.frame(exposure = paste0(exposure,&quot;: &quot;, level_names), 
+                       est = round(exp(est[inds, &quot;Estimate&quot;]),round_digit), 
+                        CI = paste0(&quot;(&quot;, round(exp(confint[inds, 1]), round_digit), &quot;,&quot;,
+                                   round(exp(confint[inds, 2]), round_digit), &quot;)&quot;),
+                       pval = formatC(est[inds, &quot;Pr(&gt;|t|)&quot;], digits = round_digit, format = &quot;E&quot;))
+  } else{ # WHIIRS is the outcome, not exponentiating estimates
+     df_out &lt;- data.frame(exposure = paste0(exposure,&quot;: &quot;, level_names), 
+                       est = round(est[inds, &quot;Estimate&quot;],round_digit), 
+                        CI = paste0(&quot;(&quot;, round(confint[inds, 1], round_digit), &quot;,&quot;,
+                                   round(confint[inds, 2], round_digit), &quot;)&quot;),
+                       pval = formatC(est[inds, &quot;Pr(&gt;|t|)&quot;], digits = round_digit, format = &quot;E&quot;))
+    
+  }
   return(df_out)
 }
 
 
-
-extract_one_exp_linear &lt;- function(mod, exposure, round_digit = 2){
+extract_one_exp &lt;- function(mod, exposure, round_digit = 2, insomnia = TRUE){
    est &lt;- summary(mod)$coef
    confint &lt;- confint(mod)
   
-  ind &lt;- which(exposure ==  rownames(est))
+  ind &lt;- grep(exposure, rownames(est))
   
-  df_out &lt;- data.frame(exposure = exposure, 
-                       est = round(est[ind, &quot;Estimate&quot;],round_digit), 
-                       CI = paste0(&quot;(&quot;, round(confint[ind, 1], round_digit),
-                                   &quot;,&quot;,round(confint[ind, 2], round_digit) , &quot;)&quot;),
+  if (insomnia == TRUE){
+    df_out &lt;- data.frame(exposure = exposure, 
+                       est = round(exp(est[ind, &quot;Estimate&quot;]),round_digit),
+                        CI = paste0(&quot;(&quot;, round(exp(confint[ind, 1]), round_digit), &quot;,&quot;,
+                                   round(exp(confint[ind, 2]), round_digit), &quot;)&quot;),
                        pval = formatC(est[ind, &quot;Pr(&gt;|t|)&quot;], digits = round_digit, format = &quot;E&quot;))
- 
-
-  return(df_out)
-}
-
-extract_one_exp &lt;- function(mod, exposure, round_digit = 2, model_name){
-  if (length(grep(&quot;insomnia&quot;, model_name)) == 1) extract_one_exp_logistic(mod, exposure, round_digit = 2) else
-  if (length(grep(&quot;whiirs&quot;, model_name)) == 1) extract_one_exp_linear(mod, exposure, round_digit = 2)
-}
-
-
-table6 &lt;- data.frame(row.names = c(&quot;Insomnia_with_GISE&quot;,
-                                   &quot;Insomnia_with_GIPSE&quot;,
-                                   &quot;WHIIRS_with_GISE&quot;,
-                                   &quot;WHIIRS_with_GIPSE&quot;),
-                     male_eff = rep(NA, 4),
-                     male_CI = NA,
-                     male_pval = NA,
-                     index_eff = NA,
-                     index_CI = NA,
-                     index_pval = NA,
-                     interaction_eff = NA,
-                     interaction_CI = NA,
-                     interaction_pval = NA)
-
-# fit models (sex combined)
-model1_fit_insomnia &lt;- svyglm(formula = as.formula(paste0(&quot;Insomnia~&quot;, paste(model1, collapse = &quot;+&quot;))), design = survey_cc, family = quasibinomial())
-
-model2_fit_insomnia &lt;- svyglm(formula = as.formula(paste0(&quot;Insomnia~&quot;, paste(model2, collapse = &quot;+&quot;))), design = survey_cc, family = quasibinomial())
-
-model1_fit_whiirs &lt;- svyglm(formula = as.formula(paste0(&quot;WHIIRS~&quot;, paste(model1, collapse = &quot;+&quot;))), design = survey_cc, family = gaussian())
-
-model2_fit_whiirs &lt;- svyglm(formula = as.formula(paste0(&quot;WHIIRS~&quot;, paste(model2, collapse = &quot;+&quot;))), design = survey_cc, family = gaussian())
-
-
-row_model &lt;- data.frame(row_ind = 1:4, row_name = row.names(table6), 
-                        model_name = c(&quot;model1_fit_insomnia&quot;, 
-                                       &quot;model2_fit_insomnia&quot;,
-                                       &quot;model1_fit_whiirs&quot;, 
-                                       &quot;model2_fit_whiirs&quot;), 
-                        index_name = rep(c(&quot;GISE_scaled&quot;, &quot;GIPSE_scaled&quot;),2))
-
-for (i in 1:4){
-  table6[i,
-       c(&quot;index_eff&quot;, &quot;index_CI&quot;,  &quot;index_pval&quot;)]  &lt;- 
-          extract_one_exp(get(paste0(row_model$model_name[i])) , 
-                                 exposure = row_model$index_name[i],
-                            model_name = row_model$model_name[i])[c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;)]
-  
-    table6[i,
-       c(&quot;male_eff&quot;, &quot;male_CI&quot;,  &quot;male_pval&quot;)]  &lt;- 
-          extract_one_exp(get(paste0(row_model$model_name[i])),
-                            model_name = row_model$model_name[i] , 
-                                 exposure = &quot;SexMale&quot;)[c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;)]
     
-      table6[i,
-       c(&quot;interaction_eff&quot;, &quot;interaction_CI&quot;,  &quot;interaction_pval&quot;)]  &lt;- 
-          extract_one_exp(get(paste0(row_model$model_name[i])),
-                            model_name = row_model$model_name[i], 
-                                 exposure = paste0(&quot;SexMale:&quot;, row_model$index_name[i]))[c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;)]
-  
-}
-
-
-
-write.csv(table6, file = file.path(folder_path, &quot;Results/Table6_interactions.csv&quot;))</code></pre>
-</div>
-<div id="table-6-using-imputed-dataset-supplementary-table" class="section level1">
-<h1>Table 6 using imputed dataset (Supplementary Table ??)</h1>
-<p>Functions that will help us</p>
-<pre class="r"><code># can&#39;t use the pool function from the MI package
-# instead write a function that fit a model on the 5 datasets, and applies Rubin&#39;s rule.
-# for simplicity, assume WHIIRS is outcome, assume 5 imputations
-
-rubins_rule &lt;- function(ests, ses, Insomnia = TRUE, round_digit = 2){
-  vars &lt;- ses^2
-  m &lt;- length(ses)
-  
-  pooled_est &lt;- mean(ests)
-  within_imp_var &lt;- mean(vars)
-  between_imp_var &lt;- sum((vars - within_imp_var)^2)/(m -1)
-  
-  pooled_var &lt;- within_imp_var + (1+1/m)*between_imp_var
-  pooled_se &lt;- sqrt(pooled_var)
-  
-  F_test_stat &lt;- pooled_est^2/pooled_var
-  F_df1 &lt;- 1
-  r &lt;- (1 + 1/m)*between_imp_var/pooled_est
-  F_df2 &lt;- (m - 1)*(1 + 1/r)^2
-  
-  F_pval &lt;- pf(F_test_stat, F_df1, F_df2, lower.tail = FALSE)
-  
-  if (Insomnia){
-      CI &lt;- paste0(&quot;(&quot;, round(exp(pooled_est - 1.96*pooled_se), round_digit), &quot;,&quot;, round(exp(pooled_est + 1.96*pooled_se), round_digit), &quot;)&quot;)
-  
-  return(data.frame(est = round(exp(pooled_est), round_digit), CI = CI, pval = F_pval))
-  } else{
-      CI &lt;- paste0(&quot;(&quot;, round(pooled_est - 1.96*pooled_se, round_digit), &quot;,&quot;, round(pooled_est + 1.96*pooled_se, round_digit), &quot;)&quot;)
-  
-  return(data.frame(est = round(pooled_est, round_digit), CI = CI, pval = F_pval))
-  }
-
-  
-}
-
-
-extract_one_exp_mi &lt;- function(survey_imp,  model_vars, exposure, 
-                               round_digit = 2, Insomnia = TRUE){
-  
-  imp_suffix &lt;-  c(&quot;&quot;, &quot;.1&quot;, &quot;.2&quot;, &quot;.3&quot;, &quot;.4&quot;)
-  exposure_no_suffix &lt;- exposure
-  
-  est &lt;- se &lt;- rep(NA, 5)
-  names(est) &lt;- names(se) &lt;-  imp_suffix
-  for (i in 1:length(imp_suffix)){
-    suffix &lt;- imp_suffix[i]
-    
-    if (exposure == &quot;SexMale&quot;){ 
-      exposure &lt;- exposure_no_suffix 
-    } else{
-      exposure &lt;- paste0(exposure_no_suffix, suffix)
-    } 
-    
-    if (Insomnia){
-          cur_fit &lt;- svyglm(formula = as.formula(paste0(&quot;Insomnia&quot;, suffix, &quot;~&quot;, paste(paste0(model_vars, suffix), collapse = &quot;+&quot;))), design = survey_imp, family = quasibinomial())
-    } else{
-          cur_fit &lt;- svyglm(formula = as.formula(paste0(&quot;WHIIRS&quot;, suffix, &quot;~&quot;, paste(paste0(model_vars, suffix), collapse = &quot;+&quot;))), design = survey_imp, family = gaussian())
-    }
-    
-
-    
-    fit_est &lt;- summary(cur_fit)$coef
-    ind_exp &lt;- which(exposure ==  rownames(fit_est))
-    est[i] &lt;- fit_est[ind_exp, &quot;Estimate&quot;]
-    se[i] &lt;- fit_est[ind_exp, &quot;Std. Error&quot;]
+  } else{  # WHIIRS is the outcome, not exponentiating estimates
+    df_out &lt;- data.frame(exposure = exposure, 
+                       est = round(est[ind, &quot;Estimate&quot;],round_digit),
+                        CI = paste0(&quot;(&quot;, round(confint[ind, 1], round_digit), &quot;,&quot;,
+                                   round(confint[ind, 2], round_digit), &quot;)&quot;),
+                       pval = formatC(est[ind, &quot;Pr(&gt;|t|)&quot;], digits = round_digit, format = &quot;E&quot;))
     
   }
   
-  # now apply Rubin&#39;s rule
-  
-  res &lt;- rubins_rule(est, se, round_digit = round_digit, Insomnia)
-
-  
-  df_out &lt;- data.frame(exposure = exposure, 
-                       est = res[[&quot;est&quot;]], 
-                       CI = res[[&quot;CI&quot;]], 
-                       pval = formatC(res[[&quot;pval&quot;]], digits = round_digit, format = &quot;E&quot;))
- 
 
   return(df_out)
 }</code></pre>
-<p>And prepare the table using imputed data:</p>
-<pre class="r"><code>table6_imp &lt;- data.frame(row.names = c(&quot;Insomnia_with_GISE&quot;,
-                                   &quot;Insomnia_with_GIPSE&quot;,
-                                   &quot;WHIIRS_with_GISE&quot;,
-                                   &quot;WHIIRS_with_GIPSE&quot;),
-                     male_eff = rep(NA, 4),
-                     male_CI = NA,
-                     male_pval = NA,
-                     index_eff = NA,
-                     index_CI = NA,
-                     index_pval = NA,
-                     interaction_eff = NA,
-                     interaction_CI = NA,
-                      interaction_pval = NA)
+</div>
+<div id="prepare-a-table-of-results-insomnia-is-outcome-by-sex-strata" class="section level1">
+<h1>Prepare a table of results: insomnia is outcome, by sex strata</h1>
+<pre class="r"><code>female_out &lt;- male_out &lt;- interaction_out &lt;- 
+  vector(mode = &quot;list&quot;, length = length(multi_vars) + length(single_vars))
+ind &lt;- 1
 
-
-
-row_model &lt;- data.frame(row_ind = 1:4, row_name = row.names(table6), 
-                        model_name = c(&quot;model1_fit_insomnia&quot;, 
-                                       &quot;model2_fit_insomnia&quot;,
-                                       &quot;model1_fit_whiirs&quot;, 
-                                       &quot;model2_fit_whiirs&quot;), 
-                        index_name = rep(c(&quot;GISE_scaled&quot;, &quot;GIPSE_scaled&quot;),2))
-
-for (i in 1:4){
-  
-  if (i %in% c(1,3)){
-    model_vars &lt;- model1
-  } else {
-    model_vars &lt;- model2
-  }
-  
-  table6_imp[i,
-       c(&quot;index_eff&quot;, &quot;index_CI&quot;,  &quot;index_pval&quot;)]  &lt;- 
-          extract_one_exp_mi(survey_imp, 
-              model_vars = model_vars, 
-              exposure = row_model$index_name[i], 
-               Insomnia = ifelse(i %in% c(1,2), TRUE, FALSE))[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;)]
-  
-  
-        
-    table6_imp[i,
-       c(&quot;male_eff&quot;, &quot;male_CI&quot;,  &quot;male_pval&quot;)]  &lt;- 
-              extract_one_exp_mi(survey_imp, 
-                    model_vars = model_vars, 
-                     exposure =  &quot;SexMale&quot;, 
-                     Insomnia = ifelse(i %in% c(1,2), TRUE, FALSE))[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;)]
-    
-    
-     table6_imp[i, c(&quot;interaction_eff&quot;, &quot;interaction_CI&quot;,  &quot;interaction_pval&quot;)]  &lt;- 
-                extract_one_exp_mi(survey_imp, 
-                model_vars = model_vars, 
-                exposure = paste0(&quot;SexMale:&quot;, row_model$index_name[i]), 
-                Insomnia = ifelse(i %in% c(1,2), TRUE, FALSE))[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;)]
-        
+for (var in multi_vars){
+   mod &lt;- svyglm(formula = as.formula(paste0(&quot;Insomnia~Age+Center+Background+&quot;, var)), 
+                 design = sleepDesign_female, family = quasibinomial())
    
+
+  female_out[[ind]] &lt;- extract_mult_exp(mod, 
+                                     exposure = var, 
+                                     level_names  = levels(dat[[var]])[-1])
+  
+    mod &lt;- svyglm(formula = as.formula(paste0(&quot;Insomnia~Age+Center+Background+&quot;, var)), 
+                 design = sleepDesign_male, family = quasibinomial())
+   
+
+  male_out[[ind]] &lt;- extract_mult_exp(mod, 
+                                     exposure = var, 
+                                     level_names  = levels(dat[[var]])[-1])
+  
+    
+  mod &lt;- svyglm(formula = as.formula(paste0(&quot;Insomnia~Age+Center+Background+Sex*&quot;, var)), 
+                 design = sleepDesign, family = quasibinomial())
+  
+  interaction_out[[ind]] &lt;- extract_mult_exp(mod, 
+                                     exposure = paste0(&quot;SexMale:&quot;,var), 
+                                     level_names  = levels(dat[[var]])[-1])
+   
+      
+  
+  ind &lt;- ind + 1
 }
 
 
+for (var in c(cont_vars, binary_vars)){
+  mod &lt;- svyglm(formula = as.formula(paste0(&quot;Insomnia~Age+Center+Background+&quot;, var)), 
+                design = sleepDesign_female, family = quasibinomial())
+  
+  female_out[[ind]] &lt;- extract_one_exp(mod, 
+                                     exposure = var)
+  
+  mod &lt;- svyglm(formula = as.formula(paste0(&quot;Insomnia~Age+Center+Background+&quot;, var)), 
+                design = sleepDesign_male, family = quasibinomial())
+  
+  male_out[[ind]] &lt;- extract_one_exp(mod, 
+                                     exposure = var)
+  
+   mod &lt;- svyglm(formula = as.formula(paste0(&quot;Insomnia~Age+Center+Background+Sex*&quot;, var)), 
+                design = sleepDesign, family = quasibinomial())
+  
+  interaction_out[[ind]] &lt;- extract_one_exp(mod, 
+                                     exposure = paste0(&quot;SexMale:&quot;,var))
+  
+  
+  ind &lt;- ind + 1
+}
 
 
+insomnia_female_tab &lt;- do.call(rbind, female_out)
+rownames(insomnia_female_tab) &lt;- paste0(&quot;r&quot;, 1:nrow(insomnia_female_tab))
 
-write.csv(table6_imp, file = file.path(folder_path, &quot;Results/Supp_table_6_with_mi.csv&quot;))</code></pre>
+insomnia_male_tab &lt;- do.call(rbind, male_out)
+rownames(insomnia_male_tab) &lt;- paste0(&quot;r&quot;, 1:nrow(insomnia_male_tab))
+
+interaction_tab &lt;- do.call(rbind, interaction_out)
+rownames(interaction_tab) &lt;- paste0(&quot;r&quot;, 1:nrow(interaction_tab))
+
+colnames(insomnia_female_tab) &lt;- c(&quot;exposure&quot;, &quot;female_est&quot;, &quot;female_CI&quot;, &quot;female_pval&quot;)
+colnames(insomnia_male_tab) &lt;- c(&quot;exposure&quot;, &quot;male_est&quot;, &quot;male_CI&quot;, &quot;male_pval&quot;)
+colnames(interaction_tab) &lt;- c(&quot;exposure&quot;, &quot;interation_est&quot;, &quot;interaction_CI&quot;, &quot;interaction_pval&quot;)
+
+combined_tab &lt;- cbind(insomnia_female_tab,
+                      insomnia_male_tab[, c(&quot;exposure&quot;, &quot;male_est&quot;, &quot;male_CI&quot;, &quot;male_pval&quot;)],
+                      interaction_tab$interaction_pval)
+
+colnames(combined_tab)[grep(&quot;interaction_pval&quot;, colnames(combined_tab))] &lt;- &quot;Interaction_pval&quot;
+write.csv(combined_tab, file = file.path(folder_path, &quot;Results/All_vars_assoc_insomnia_by_sex.csv&quot;))
+
+combined_tab</code></pre>
+<pre><code>##                                                                          exposure
+## r1                               Marital_status: Married or living with a partner
+## r2                                Marital_status: Separated,divorced,or widow(er)
+## r3                                                     Occupation: Service Worker
+## r4                                                     Occupation: Skilled Worker
+## r5  Occupation: Professional/technical, administrative/executive, or office staff
+## r6                                                   Occupation: Other occupation
+## r7                                                  Income_level: $10,001-$20,000
+## r8                                                  Income_level: $20,001-$40,000
+## r9                                                  Income_level: $40,001-$75,000
+## r10                                               Income_level: More than $75,000
+## r11                        Employment_status: Employed part-time(&lt;=35 hours/week)
+## r12                         Employment_status: Employed full-time(&gt;35 hours/week)
+## r13                                    Education: At most high school diploma/GED
+## r14                                       Education: Greater than high school/GED
+## r15                                                 Years_in_US: 10 Years or More
+## r16                                                          Years_in_US: US born
+## r17                                                        Language_acculturation
+## r18                                                          Social_acculturation
+## r19                                                         Ethnic_identity_score
+## r20                                                                        STAI10
+## r21                                                                         CESD9
+## r22                                                                 Language_pref
+## r23                                                      Current_Health_insurance
+##     female_est   female_CI female_pval
+## r1        0.89 (0.74,1.08)    2.50E-01
+## r2        1.10 (0.88,1.37)    4.15E-01
+## r3        1.14 (0.87,1.49)    3.40E-01
+## r4        0.97 (0.75,1.26)    8.33E-01
+## r5        1.04 (0.82,1.32)    7.52E-01
+## r6        1.08 (0.84,1.38)    5.58E-01
+## r7        0.99  (0.82,1.2)    8.97E-01
+## r8        0.85 (0.68,1.06)    1.45E-01
+## r9        0.73 (0.53,0.99)    4.10E-02
+## r10       0.51 (0.33,0.78)    1.94E-03
+## r11       0.79 (0.65,0.96)    1.86E-02
+## r12       0.71  (0.6,0.84)    5.62E-05
+## r13       0.94 (0.75,1.18)    5.88E-01
+## r14       0.80 (0.67,0.96)    1.58E-02
+## r15       1.13 (0.94,1.36)    1.90E-01
+## r16       1.47 (1.13,1.91)    3.64E-03
+## r17       1.12 (1.02,1.21)    1.23E-02
+## r18       1.05 (0.91,1.22)    4.94E-01
+## r19       0.98 (0.86,1.12)    7.97E-01
+## r20       1.12  (1.1,1.13)    4.73E-47
+## r21       1.13 (1.11,1.15)    4.39E-45
+## r22       1.21  (0.97,1.5)    8.59E-02
+## r23       0.84     (0.7,1)    4.70E-02
+##                                                                          exposure
+## r1                               Marital_status: Married or living with a partner
+## r2                                Marital_status: Separated,divorced,or widow(er)
+## r3                                                     Occupation: Service Worker
+## r4                                                     Occupation: Skilled Worker
+## r5  Occupation: Professional/technical, administrative/executive, or office staff
+## r6                                                   Occupation: Other occupation
+## r7                                                  Income_level: $10,001-$20,000
+## r8                                                  Income_level: $20,001-$40,000
+## r9                                                  Income_level: $40,001-$75,000
+## r10                                               Income_level: More than $75,000
+## r11                        Employment_status: Employed part-time(&lt;=35 hours/week)
+## r12                         Employment_status: Employed full-time(&gt;35 hours/week)
+## r13                                    Education: At most high school diploma/GED
+## r14                                       Education: Greater than high school/GED
+## r15                                                 Years_in_US: 10 Years or More
+## r16                                                          Years_in_US: US born
+## r17                                                        Language_acculturation
+## r18                                                          Social_acculturation
+## r19                                                         Ethnic_identity_score
+## r20                                                                        STAI10
+## r21                                                                         CESD9
+## r22                                                                 Language_pref
+## r23                                                      Current_Health_insurance
+##     male_est     male_CI male_pval Interaction_pval
+## r1      0.74 (0.58,0.93)  9.13E-03         1.46E-01
+## r2      0.84 (0.63,1.12)  2.29E-01         8.38E-02
+## r3      1.01 (0.74,1.39)  9.45E-01         6.65E-01
+## r4      1.14 (0.92,1.43)  2.26E-01         4.37E-01
+## r5      0.93 (0.67,1.28)  6.39E-01         5.16E-01
+## r6      1.13 (0.87,1.46)  3.55E-01         7.53E-01
+## r7      0.70 (0.54,0.92)  1.11E-02         5.16E-02
+## r8      0.61  (0.46,0.8)  5.18E-04         6.82E-02
+## r9      0.65  (0.47,0.9)  1.06E-02         6.51E-01
+## r10     0.50 (0.28,0.89)  1.90E-02         9.23E-01
+## r11     0.77 (0.59,1.01)  5.92E-02         9.45E-01
+## r12     0.66 (0.54,0.81)  6.27E-05         7.61E-01
+## r13     1.10 (0.87,1.39)  4.26E-01         2.62E-01
+## r14     1.07 (0.86,1.35)  5.31E-01         5.01E-02
+## r15     1.12 (0.89,1.42)  3.28E-01         6.57E-01
+## r16     1.54 (1.13,2.11)  7.14E-03         7.61E-01
+## r17     1.15 (1.04,1.27)  7.65E-03         3.75E-01
+## r18     0.97 (0.82,1.16)  7.72E-01         5.91E-01
+## r19     0.97 (0.83,1.14)  7.30E-01         8.69E-01
+## r20     1.15 (1.13,1.17)  4.91E-44         7.01E-03
+## r21     1.13  (1.1,1.15)  8.40E-27         7.05E-01
+## r22     1.43 (1.11,1.84)  5.08E-03         1.88E-01
+## r23     0.90 (0.74,1.09)  2.74E-01         9.09E-01</code></pre>
+</div>
+<div id="the-same-analysis-with-whiirs-as-the-outcome" class="section level1">
+<h1>The same analysis with WHIIRS as the outcome</h1>
+<pre class="r"><code>female_out &lt;- male_out &lt;- interaction_out &lt;- 
+  vector(mode = &quot;list&quot;, length = length(multi_vars) + length(single_vars))
+ind &lt;- 1
+
+for (var in multi_vars){
+   mod &lt;- svyglm(formula = as.formula(paste0(&quot;WHIIRS~Age+Center+Background+&quot;, var)), 
+                 design = sleepDesign_female, family = gaussian())
+   
+
+  female_out[[ind]] &lt;- extract_mult_exp(mod, 
+                                     exposure = var, 
+                                     level_names  = levels(dat[[var]])[-1])
+  
+    mod &lt;- svyglm(formula = as.formula(paste0(&quot;WHIIRS~Age+Center+Background+&quot;, var)), 
+                 design = sleepDesign_male, family = gaussian())
+   
+
+  male_out[[ind]] &lt;- extract_mult_exp(mod, 
+                                     exposure = var, 
+                                     level_names  = levels(dat[[var]])[-1])
+  
+    
+  mod &lt;- svyglm(formula = as.formula(paste0(&quot;WHIIRS~Age+Center+Background+Sex*&quot;, var)), 
+                 design = sleepDesign, family = gaussian())
+  
+  interaction_out[[ind]] &lt;- extract_mult_exp(mod, 
+                                     exposure = paste0(&quot;SexMale:&quot;,var), 
+                                     level_names  = levels(dat[[var]])[-1])
+   
+      
+  
+  ind &lt;- ind + 1
+}
+
+
+for (var in c(cont_vars, binary_vars)){
+  mod &lt;- svyglm(formula = as.formula(paste0(&quot;WHIIRS~Age+Center+Background+&quot;, var)), 
+                design = sleepDesign_female, family = gaussian())
+  
+  female_out[[ind]] &lt;- extract_one_exp(mod, 
+                                     exposure = var)
+  
+  mod &lt;- svyglm(formula = as.formula(paste0(&quot;WHIIRS~Age+Center+Background+&quot;, var)), 
+                design = sleepDesign_male, family = gaussian())
+  
+  male_out[[ind]] &lt;- extract_one_exp(mod, 
+                                     exposure = var)
+  
+   mod &lt;- svyglm(formula = as.formula(paste0(&quot;WHIIRS~Age+Center+Background+Sex*&quot;, var)), 
+                design = sleepDesign, family = gaussian())
+  
+  interaction_out[[ind]] &lt;- extract_one_exp(mod, 
+                                     exposure = paste0(&quot;SexMale:&quot;,var))
+  
+  
+  ind &lt;- ind + 1
+}
+
+
+whiirs_female_tab &lt;- do.call(rbind, female_out)
+rownames(whiirs_female_tab) &lt;- paste0(&quot;r&quot;, 1:nrow(whiirs_female_tab))
+
+whiirs_male_tab &lt;- do.call(rbind, male_out)
+rownames(whiirs_male_tab) &lt;- paste0(&quot;r&quot;, 1:nrow(whiirs_male_tab))
+
+interaction_tab &lt;- do.call(rbind, interaction_out)
+rownames(interaction_tab) &lt;- paste0(&quot;r&quot;, 1:nrow(interaction_tab))
+
+colnames(whiirs_female_tab) &lt;- c(&quot;exposure&quot;, &quot;female_est&quot;, &quot;female_CI&quot;, &quot;female_pval&quot;)
+colnames(whiirs_male_tab) &lt;- c(&quot;exposure&quot;, &quot;male_est&quot;, &quot;male_CI&quot;, &quot;male_pval&quot;)
+colnames(interaction_tab) &lt;- c(&quot;exposure&quot;, &quot;interation_est&quot;, &quot;interaction_CI&quot;, &quot;interaction_pval&quot;)
+
+combined_tab &lt;- cbind(whiirs_female_tab,
+                      whiirs_male_tab[, c(&quot;exposure&quot;, &quot;male_est&quot;, &quot;male_CI&quot;, &quot;male_pval&quot;)],
+                      interaction_tab$interaction_pval)
+
+colnames(combined_tab)[grep(&quot;interaction_pval&quot;, colnames(combined_tab))] &lt;- &quot;Interaction_pval&quot;
+
+write.csv(combined_tab, file = file.path(folder_path, &quot;Results/All_vars_assoc_WHIIRS_by_sex.csv&quot;))
+
+combined_tab</code></pre>
+<pre><code>##                                                                          exposure
+## r1                               Marital_status: Married or living with a partner
+## r2                                Marital_status: Separated,divorced,or widow(er)
+## r3                                                     Occupation: Service Worker
+## r4                                                     Occupation: Skilled Worker
+## r5  Occupation: Professional/technical, administrative/executive, or office staff
+## r6                                                   Occupation: Other occupation
+## r7                                                  Income_level: $10,001-$20,000
+## r8                                                  Income_level: $20,001-$40,000
+## r9                                                  Income_level: $40,001-$75,000
+## r10                                               Income_level: More than $75,000
+## r11                        Employment_status: Employed part-time(&lt;=35 hours/week)
+## r12                         Employment_status: Employed full-time(&gt;35 hours/week)
+## r13                                    Education: At most high school diploma/GED
+## r14                                       Education: Greater than high school/GED
+## r15                                                 Years_in_US: 10 Years or More
+## r16                                                          Years_in_US: US born
+## r17                                                        Language_acculturation
+## r18                                                          Social_acculturation
+## r19                                                         Ethnic_identity_score
+## r20                                                                        STAI10
+## r21                                                                         CESD9
+## r22                                                                 Language_pref
+## r23                                                      Current_Health_insurance
+##     female_est   female_CI female_pval
+## r1        0.67 (0.43,1.04)    7.31E-02
+## r2        1.48 (0.85,2.58)    1.65E-01
+## r3        1.12 (0.61,2.04)    7.14E-01
+## r4        0.98 (0.58,1.65)    9.34E-01
+## r5        1.01  (0.59,1.7)    9.85E-01
+## r6        1.21 (0.67,2.18)    5.26E-01
+## r7        0.62    (0.38,1)    4.78E-02
+## r8        0.38 (0.22,0.65)    4.93E-04
+## r9        0.31 (0.17,0.59)    3.85E-04
+## r10       0.16 (0.06,0.41)    1.34E-04
+## r11       0.54 (0.34,0.84)    6.68E-03
+## r12       0.38 (0.25,0.57)    3.15E-06
+## r13       0.76 (0.46,1.26)    2.90E-01
+## r14       0.49 (0.31,0.75)    1.18E-03
+## r15       1.27 (0.85,1.92)    2.48E-01
+## r16       2.77 (1.57,4.86)    4.20E-04
+## r17       1.43 (1.19,1.71)    1.35E-04
+## r18       1.11 (0.78,1.57)    5.79E-01
+## r19       0.90 (0.66,1.24)    5.24E-01
+## r20       1.38 (1.34,1.41)    8.49E-89
+## r21       1.43 (1.39,1.48)    2.02E-81
+## r22       1.78 (1.13,2.82)    1.33E-02
+## r23       0.71 (0.48,1.04)    7.77E-02
+##                                                                          exposure
+## r1                               Marital_status: Married or living with a partner
+## r2                                Marital_status: Separated,divorced,or widow(er)
+## r3                                                     Occupation: Service Worker
+## r4                                                     Occupation: Skilled Worker
+## r5  Occupation: Professional/technical, administrative/executive, or office staff
+## r6                                                   Occupation: Other occupation
+## r7                                                  Income_level: $10,001-$20,000
+## r8                                                  Income_level: $20,001-$40,000
+## r9                                                  Income_level: $40,001-$75,000
+## r10                                               Income_level: More than $75,000
+## r11                        Employment_status: Employed part-time(&lt;=35 hours/week)
+## r12                         Employment_status: Employed full-time(&gt;35 hours/week)
+## r13                                    Education: At most high school diploma/GED
+## r14                                       Education: Greater than high school/GED
+## r15                                                 Years_in_US: 10 Years or More
+## r16                                                          Years_in_US: US born
+## r17                                                        Language_acculturation
+## r18                                                          Social_acculturation
+## r19                                                         Ethnic_identity_score
+## r20                                                                        STAI10
+## r21                                                                         CESD9
+## r22                                                                 Language_pref
+## r23                                                      Current_Health_insurance
+##     male_est     male_CI male_pval Interaction_pval
+## r1      0.50 (0.31,0.81)  4.51E-03         4.79E-01
+## r2      0.84  (0.44,1.6)  6.03E-01         8.62E-02
+## r3      1.61 (0.82,3.15)  1.67E-01         4.18E-01
+## r4      1.62 (1.05,2.51)  2.97E-02         2.56E-01
+## r5      1.06 (0.57,1.97)  8.42E-01         8.95E-01
+## r6      1.16 (0.71,1.91)  5.51E-01         8.49E-01
+## r7      0.33 (0.16,0.66)  1.83E-03         1.83E-01
+## r8      0.22 (0.11,0.45)  4.30E-05         3.82E-01
+## r9      0.27 (0.12,0.57)  6.76E-04         9.41E-01
+## r10     0.18 (0.07,0.46)  4.16E-04         6.36E-01
+## r11     0.41 (0.24,0.69)  7.73E-04         7.86E-01
+## r12     0.30  (0.2,0.45)  7.39E-09         7.28E-01
+## r13     0.97  (0.59,1.6)  9.12E-01         2.71E-01
+## r14     1.01 (0.63,1.62)  9.72E-01         1.22E-02
+## r15     1.30 (0.83,2.04)  2.58E-01         4.98E-01
+## r16     4.21 (2.36,7.48)  1.25E-06         3.38E-01
+## r17     1.60 (1.33,1.93)  8.85E-07         3.00E-01
+## r18     1.28 (0.94,1.74)  1.14E-01         5.51E-01
+## r19     0.92 (0.68,1.24)  5.64E-01         9.35E-01
+## r20     1.44 (1.39,1.49)  6.27E-68         4.17E-02
+## r21     1.39 (1.34,1.45)  3.01E-49         1.35E-01
+## r22     2.84 (1.74,4.64)  3.25E-05         2.07E-01
+## r23     0.83 (0.57,1.22)  3.53E-01         6.80E-01</code></pre>
 <pre class="r"><code>sessionInfo()</code></pre>
 <pre><code>## R version 4.2.3 (2023-03-15)
 ## Platform: aarch64-apple-darwin20 (64-bit)
@@ -865,34 +1039,37 @@ write.csv(table6_imp, file = file.path(folder_path, &quot;Results/Supp_table_6_w
 ## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
 ## 
 ## attached base packages:
-## [1] grid      stats     graphics  grDevices utils     datasets  methods  
-## [8] base     
+##  [1] splines   stats4    grid      stats     graphics  grDevices utils    
+##  [8] datasets  methods   base     
 ## 
 ## other attached packages:
-##  [1] reshape2_1.4.4     jtools_2.2.2       RColorBrewer_1.1-3 naniar_1.0.0      
-##  [5] UpSetR_1.4.0       glmnet_4.1-7       boot_1.3-28.1      sjlabelled_1.2.0  
-##  [9] memisc_0.99.31.6   MASS_7.3-60        lattice_0.21-8     labelled_2.12.0   
-## [13] factoextra_1.0.7   plyr_1.8.8         survey_4.2-1       survival_3.5-5    
-## [17] Matrix_1.5-4.1     lubridate_1.9.2    forcats_1.0.0      stringr_1.5.0     
-## [21] dplyr_1.1.2        purrr_1.0.1        readr_2.1.4        tidyr_1.3.0       
-## [25] tibble_3.2.1       ggplot2_3.4.2      tidyverse_2.0.0   
+##  [1] reshape2_1.4.4     jtools_2.2.2       svyVGAM_1.2        VGAM_1.1-9        
+##  [5] RColorBrewer_1.1-3 naniar_1.0.0       UpSetR_1.4.0       glmnet_4.1-7      
+##  [9] boot_1.3-28.1      mi_1.1             sjlabelled_1.2.0   memisc_0.99.31.6  
+## [13] MASS_7.3-60        lattice_0.21-8     tableone_0.13.2    labelled_2.12.0   
+## [17] factoextra_1.0.7   plyr_1.8.8         survey_4.2-1       survival_3.5-5    
+## [21] Matrix_1.5-4.1     lubridate_1.9.2    forcats_1.0.0      stringr_1.5.0     
+## [25] dplyr_1.1.2        purrr_1.0.1        readr_2.1.4        tidyr_1.3.0       
+## [29] tibble_3.2.1       ggplot2_3.4.2      tidyverse_2.0.0   
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] ggrepel_0.9.3     Rcpp_1.0.11       foreach_1.5.2     digest_0.6.33    
-##  [5] utf8_1.2.3        R6_2.5.1          visdat_0.6.0      evaluate_0.21    
-##  [9] pillar_1.9.0      rlang_1.1.1       rstudioapi_0.15.0 data.table_1.14.8
-## [13] car_3.1-2         jquerylib_0.1.4   rmarkdown_2.23    splines_4.2.3    
-## [17] pander_0.6.5      munsell_0.5.0     compiler_4.2.3    xfun_0.39        
-## [21] pkgconfig_2.0.3   shape_1.4.6       htmltools_0.5.5   mitools_2.4      
-## [25] insight_0.19.3    tidyselect_1.2.0  gridExtra_2.3     codetools_0.2-19 
-## [29] fansi_1.0.4       crayon_1.5.2      tzdb_0.4.0        withr_2.5.0      
-## [33] jsonlite_1.8.7    gtable_0.3.3      lifecycle_1.0.3   DBI_1.1.3        
-## [37] magrittr_2.0.3    scales_1.2.1      cli_3.6.1         stringi_1.7.12   
-## [41] cachem_1.0.8      carData_3.0-5     bslib_0.5.0       generics_0.1.3   
-## [45] vctrs_0.6.3       iterators_1.0.14  tools_4.2.3       glue_1.6.2       
-## [49] hms_1.1.3         abind_1.4-5       fastmap_1.1.1     yaml_2.3.7       
-## [53] timechange_0.2.0  colorspace_2.1-0  knitr_1.43        haven_2.5.3      
-## [57] sass_0.4.7</code></pre>
+##  [1] nlme_3.1-162      bit64_4.0.5       insight_0.19.3    tools_4.2.3      
+##  [5] bslib_0.5.0       utf8_1.2.3        R6_2.5.1          DBI_1.1.3        
+##  [9] colorspace_2.1-0  withr_2.5.0       tidyselect_1.2.0  gridExtra_2.3    
+## [13] bit_4.0.5         compiler_4.2.3    cli_3.6.1         sass_0.4.7       
+## [17] scales_1.2.1      digest_0.6.33     minqa_1.2.5       rmarkdown_2.23   
+## [21] pkgconfig_2.0.3   htmltools_0.5.5   lme4_1.1-34       fastmap_1.1.1    
+## [25] rlang_1.1.1       rstudioapi_0.15.0 shape_1.4.6       jquerylib_0.1.4  
+## [29] generics_0.1.3    jsonlite_1.8.7    vroom_1.6.3       car_3.1-2        
+## [33] magrittr_2.0.3    Rcpp_1.0.11       munsell_0.5.0     fansi_1.0.4      
+## [37] abind_1.4-5       lifecycle_1.0.3   visdat_0.6.0      stringi_1.7.12   
+## [41] yaml_2.3.7        carData_3.0-5     parallel_4.2.3    ggrepel_0.9.3    
+## [45] crayon_1.5.2      haven_2.5.3       pander_0.6.5      hms_1.1.3        
+## [49] knitr_1.43        pillar_1.9.0      codetools_0.2-19  glue_1.6.2       
+## [53] evaluate_0.21     mitools_2.4       data.table_1.14.8 vctrs_0.6.3      
+## [57] nloptr_2.0.3      tzdb_0.4.0        foreach_1.5.2     gtable_0.3.3     
+## [61] cachem_1.0.8      xfun_0.39         coda_0.19-4       arm_1.13-1       
+## [65] iterators_1.0.14  timechange_0.2.0</code></pre>
 </div>
 
 

@@ -362,7 +362,7 @@ for (i in 1:4){
   
         
     table6_imp[i,
-       c("male_eff", "index_CI",  "male_pval")]  <- 
+       c("male_eff", "male_CI",  "male_pval")]  <- 
               extract_one_exp_mi(survey_imp, 
                     model_vars = model_vars, 
                      exposure =  "SexMale", 

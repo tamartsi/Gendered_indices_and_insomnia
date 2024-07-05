@@ -1,0 +1,330 @@
+---
+title: "Prepare a table providing associations of sociodemographic variables with insomnia by sex"
+output: 
+  html_document:
+    toc: true
+    keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r loading packages}
+library(tidyverse)
+library(survey)
+library(plyr)
+library(dplyr)
+library(factoextra)
+library(labelled)
+library(tableone)
+library(memisc)
+library(sjlabelled)
+library(mi)
+library(boot)
+library(glmnet)
+library(UpSetR)
+library(naniar)
+library(RColorBrewer)
+library(svyVGAM)
+library(jtools)
+library(reshape2)
+```
+
+# Read in the data
+
+```{r}
+folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gendered_indices"
+data_with_sleep <- read_csv(file.path(folder_path, "Data/sol_sofer_sorajja_joon_covariates_20220810.csv"))
+
+# load the prepared dataset
+dat <- readRDS(file.path(folder_path, "Data/Data_with_miss.Rds"))
+
+```
+
+# Prepare for the analysis
+
+```{r}
+# survey object
+survey_base <- svydesign(id = ~PSU_ID,
+                          strata = ~STRAT,
+                          weights = ~WEIGHT_FINAL_NORM_OVERALL,
+                          nest = TRUE,
+                          data = dat)
+sleepDesign <- subset(survey_base, complete.cases(dat))
+
+sleepDesign_female <- subset(sleepDesign, Sex == "Female")
+sleepDesign_male <- subset(sleepDesign, Sex == "Male")
+
+# baseline covariates to adjust for
+adj_vars <- c("Age", "Center", "Background")
+
+# multi-level variables to be analyzed in multinomial regression
+multi_vars <- c("Marital_status", 
+                "Occupation",
+                "Income_level",
+                "Employment_status", 
+                "Education", 
+                "Years_in_US")
+# not multi-level ones:
+single_vars  <- c("Language_pref",
+                 "Current_Health_insurance",
+                 "Language_acculturation",
+                  "Social_acculturation",
+                  "Ethnic_identity_score", 
+                  "STAI10",
+                  "CESD")
+
+cont_vars  <- c( "Language_acculturation",
+                  "Social_acculturation",
+                 "Ethnic_identity_score", 
+                  "STAI10",
+                  "CESD9")
+
+binary_vars  <- c("Language_pref",
+                 "Current_Health_insurance")
+
+
+```
+
+
+
+
+# functions to extract and summarize results when insomnia is outcome
+
+
+```{r}
+extract_mult_exp <- function(mod, exposure, level_names, round_digit = 2, insomnia = TRUE){
+  est <- summary(mod)$coef
+  confint <- confint(mod)
+  
+  inds <- grep(exposure, rownames(est))
+  
+  if (insomnia == TRUE){
+   df_out <- data.frame(exposure = paste0(exposure,": ", level_names), 
+                       est = round(exp(est[inds, "Estimate"]),round_digit), 
+                        CI = paste0("(", round(exp(confint[inds, 1]), round_digit), ",",
+                                   round(exp(confint[inds, 2]), round_digit), ")"),
+                       pval = formatC(est[inds, "Pr(>|t|)"], digits = round_digit, format = "E"))
+  } else{ # WHIIRS is the outcome, not exponentiating estimates
+     df_out <- data.frame(exposure = paste0(exposure,": ", level_names), 
+                       est = round(est[inds, "Estimate"],round_digit), 
+                        CI = paste0("(", round(confint[inds, 1], round_digit), ",",
+                                   round(confint[inds, 2], round_digit), ")"),
+                       pval = formatC(est[inds, "Pr(>|t|)"], digits = round_digit, format = "E"))
+    
+  }
+  return(df_out)
+}
+
+
+extract_one_exp <- function(mod, exposure, round_digit = 2, insomnia = TRUE){
+   est <- summary(mod)$coef
+   confint <- confint(mod)
+  
+  ind <- grep(exposure, rownames(est))
+  
+  if (insomnia == TRUE){
+    df_out <- data.frame(exposure = exposure, 
+                       est = round(exp(est[ind, "Estimate"]),round_digit),
+                        CI = paste0("(", round(exp(confint[ind, 1]), round_digit), ",",
+                                   round(exp(confint[ind, 2]), round_digit), ")"),
+                       pval = formatC(est[ind, "Pr(>|t|)"], digits = round_digit, format = "E"))
+    
+  } else{  # WHIIRS is the outcome, not exponentiating estimates
+    df_out <- data.frame(exposure = exposure, 
+                       est = round(est[ind, "Estimate"],round_digit),
+                        CI = paste0("(", round(confint[ind, 1], round_digit), ",",
+                                   round(confint[ind, 2], round_digit), ")"),
+                       pval = formatC(est[ind, "Pr(>|t|)"], digits = round_digit, format = "E"))
+    
+  }
+  
+
+  return(df_out)
+}
+
+
+```
+
+# Prepare a table of results: insomnia is outcome, by sex strata
+
+```{r}
+female_out <- male_out <- interaction_out <- 
+  vector(mode = "list", length = length(multi_vars) + length(single_vars))
+ind <- 1
+
+for (var in multi_vars){
+   mod <- svyglm(formula = as.formula(paste0("Insomnia~Age+Center+Background+", var)), 
+                 design = sleepDesign_female, family = quasibinomial())
+   
+
+  female_out[[ind]] <- extract_mult_exp(mod, 
+                                     exposure = var, 
+                                     level_names  = levels(dat[[var]])[-1])
+  
+    mod <- svyglm(formula = as.formula(paste0("Insomnia~Age+Center+Background+", var)), 
+                 design = sleepDesign_male, family = quasibinomial())
+   
+
+  male_out[[ind]] <- extract_mult_exp(mod, 
+                                     exposure = var, 
+                                     level_names  = levels(dat[[var]])[-1])
+  
+    
+  mod <- svyglm(formula = as.formula(paste0("Insomnia~Age+Center+Background+Sex*", var)), 
+                 design = sleepDesign, family = quasibinomial())
+  
+  interaction_out[[ind]] <- extract_mult_exp(mod, 
+                                     exposure = paste0("SexMale:",var), 
+                                     level_names  = levels(dat[[var]])[-1])
+   
+      
+  
+  ind <- ind + 1
+}
+
+
+for (var in c(cont_vars, binary_vars)){
+  mod <- svyglm(formula = as.formula(paste0("Insomnia~Age+Center+Background+", var)), 
+                design = sleepDesign_female, family = quasibinomial())
+  
+  female_out[[ind]] <- extract_one_exp(mod, 
+                                     exposure = var)
+  
+  mod <- svyglm(formula = as.formula(paste0("Insomnia~Age+Center+Background+", var)), 
+                design = sleepDesign_male, family = quasibinomial())
+  
+  male_out[[ind]] <- extract_one_exp(mod, 
+                                     exposure = var)
+  
+   mod <- svyglm(formula = as.formula(paste0("Insomnia~Age+Center+Background+Sex*", var)), 
+                design = sleepDesign, family = quasibinomial())
+  
+  interaction_out[[ind]] <- extract_one_exp(mod, 
+                                     exposure = paste0("SexMale:",var))
+  
+  
+  ind <- ind + 1
+}
+
+
+insomnia_female_tab <- do.call(rbind, female_out)
+rownames(insomnia_female_tab) <- paste0("r", 1:nrow(insomnia_female_tab))
+
+insomnia_male_tab <- do.call(rbind, male_out)
+rownames(insomnia_male_tab) <- paste0("r", 1:nrow(insomnia_male_tab))
+
+interaction_tab <- do.call(rbind, interaction_out)
+rownames(interaction_tab) <- paste0("r", 1:nrow(interaction_tab))
+
+colnames(insomnia_female_tab) <- c("exposure", "female_est", "female_CI", "female_pval")
+colnames(insomnia_male_tab) <- c("exposure", "male_est", "male_CI", "male_pval")
+colnames(interaction_tab) <- c("exposure", "interation_est", "interaction_CI", "interaction_pval")
+
+combined_tab <- cbind(insomnia_female_tab,
+                      insomnia_male_tab[, c("exposure", "male_est", "male_CI", "male_pval")],
+                      interaction_tab$interaction_pval)
+
+colnames(combined_tab)[grep("interaction_pval", colnames(combined_tab))] <- "Interaction_pval"
+write.csv(combined_tab, file = file.path(folder_path, "Results/All_vars_assoc_insomnia_by_sex.csv"))
+
+combined_tab
+```
+
+
+
+# The same analysis with WHIIRS as the outcome
+
+
+```{r}
+female_out <- male_out <- interaction_out <- 
+  vector(mode = "list", length = length(multi_vars) + length(single_vars))
+ind <- 1
+
+for (var in multi_vars){
+   mod <- svyglm(formula = as.formula(paste0("WHIIRS~Age+Center+Background+", var)), 
+                 design = sleepDesign_female, family = gaussian())
+   
+
+  female_out[[ind]] <- extract_mult_exp(mod, 
+                                     exposure = var, 
+                                     level_names  = levels(dat[[var]])[-1])
+  
+    mod <- svyglm(formula = as.formula(paste0("WHIIRS~Age+Center+Background+", var)), 
+                 design = sleepDesign_male, family = gaussian())
+   
+
+  male_out[[ind]] <- extract_mult_exp(mod, 
+                                     exposure = var, 
+                                     level_names  = levels(dat[[var]])[-1])
+  
+    
+  mod <- svyglm(formula = as.formula(paste0("WHIIRS~Age+Center+Background+Sex*", var)), 
+                 design = sleepDesign, family = gaussian())
+  
+  interaction_out[[ind]] <- extract_mult_exp(mod, 
+                                     exposure = paste0("SexMale:",var), 
+                                     level_names  = levels(dat[[var]])[-1])
+   
+      
+  
+  ind <- ind + 1
+}
+
+
+for (var in c(cont_vars, binary_vars)){
+  mod <- svyglm(formula = as.formula(paste0("WHIIRS~Age+Center+Background+", var)), 
+                design = sleepDesign_female, family = gaussian())
+  
+  female_out[[ind]] <- extract_one_exp(mod, 
+                                     exposure = var)
+  
+  mod <- svyglm(formula = as.formula(paste0("WHIIRS~Age+Center+Background+", var)), 
+                design = sleepDesign_male, family = gaussian())
+  
+  male_out[[ind]] <- extract_one_exp(mod, 
+                                     exposure = var)
+  
+   mod <- svyglm(formula = as.formula(paste0("WHIIRS~Age+Center+Background+Sex*", var)), 
+                design = sleepDesign, family = gaussian())
+  
+  interaction_out[[ind]] <- extract_one_exp(mod, 
+                                     exposure = paste0("SexMale:",var))
+  
+  
+  ind <- ind + 1
+}
+
+
+whiirs_female_tab <- do.call(rbind, female_out)
+rownames(whiirs_female_tab) <- paste0("r", 1:nrow(whiirs_female_tab))
+
+whiirs_male_tab <- do.call(rbind, male_out)
+rownames(whiirs_male_tab) <- paste0("r", 1:nrow(whiirs_male_tab))
+
+interaction_tab <- do.call(rbind, interaction_out)
+rownames(interaction_tab) <- paste0("r", 1:nrow(interaction_tab))
+
+colnames(whiirs_female_tab) <- c("exposure", "female_est", "female_CI", "female_pval")
+colnames(whiirs_male_tab) <- c("exposure", "male_est", "male_CI", "male_pval")
+colnames(interaction_tab) <- c("exposure", "interation_est", "interaction_CI", "interaction_pval")
+
+combined_tab <- cbind(whiirs_female_tab,
+                      whiirs_male_tab[, c("exposure", "male_est", "male_CI", "male_pval")],
+                      interaction_tab$interaction_pval)
+
+colnames(combined_tab)[grep("interaction_pval", colnames(combined_tab))] <- "Interaction_pval"
+
+write.csv(combined_tab, file = file.path(folder_path, "Results/All_vars_assoc_WHIIRS_by_sex.csv"))
+
+combined_tab
+```
+
+
+
+
+
+```{r}
+sessionInfo()
+```
