@@ -227,6 +227,11 @@ library(reshape2)
 ##     smiths
 ```
 
+```r
+# source p-value formatting function
+source("format_pvalue.R")
+```
+
 # Load and prepare the dataset
 
 
@@ -369,7 +374,8 @@ extract_one_exp <- function(mod, exposure, round_digit = 2){
                        est = round(exp(est[ind, "Estimate"]),round_digit), 
                        CI = paste0("(", round(exp(confint[ind, 1]), round_digit),
                                    ",",round(exp(confint[ind, 2]), round_digit) , ")"),
-                       pval = formatC(est[ind, "Pr(>|t|)"], digits = round_digit, format = "E"))
+                       pval = formatC(est[ind, "Pr(>|t|)"], digits = round_digit, format = "E"), 
+                       paper_pval= format_pvalue(est[ind, "Pr(>|t|)"]))
  
 
   return(df_out)
@@ -383,9 +389,11 @@ table5 <- data.frame(row.names = c(paste0("all_model_",1:5 ),
                      male_eff = rep(NA, 9),
                      male_CI = NA,
                      male_pval = NA,
+                     male_paper_pval = NA,
                      index_eff = NA,
                      index_CI = NA,
-                     index_pval = NA)
+                     index_pval = NA,
+                     index_paper_pval = NA)
 
 # fit models (sex combined)
 model1_fit <- svyglm(formula = as.formula(paste0("Insomnia~", paste(model1, collapse = "+"))), design = survey_cc, family = quasibinomial())
@@ -400,20 +408,20 @@ model5_fit <- svyglm(formula = as.formula(paste0("Insomnia~", paste(model5, coll
 
 for (i in 1:5){
   table5[paste0("all_model_", i), 
-         c("male_eff", "male_CI", "male_pval")] <- 
+         c("male_eff", "male_CI", "male_pval", "male_paper_pval")] <- 
              extract_one_exp(get(paste0("model", i, "_fit")) , 
-                                 exposure = "Sex")[c("est", "CI", "pval")]
+                                 exposure = "Sex")[c("est", "CI", "pval", "paper_pval")]
 }
 
 table5["all_model_2",
-       c("index_eff", "index_CI",  "index_pval")]  <- 
+       c("index_eff", "index_CI",  "index_pval", "index_paper_pval")]  <- 
           extract_one_exp(get(paste0("model2_fit")) , 
-                                 exposure = "GISE_scaled")[c("est", "CI", "pval")]
+                                 exposure = "GISE_scaled")[c("est", "CI", "pval","paper_pval")]
 
 table5["all_model_3",
-       c("index_eff", "index_CI", "index_pval")]  <- 
+       c("index_eff", "index_CI", "index_pval", "index_paper_pval")]  <- 
           extract_one_exp(get(paste0("model3_fit")) , 
-                                 exposure = "GIPSE_scaled")[c("est", "CI", "pval")]
+                                 exposure = "GIPSE_scaled")[c("est", "CI", "pval","paper_pval")]
 
 
 survey_cc_male <- subset(survey_cc, Sex == "Male")
@@ -431,9 +439,9 @@ for (i in 2:3){
   for (sex in c("male", "female")){
     type <- ifelse(i == 2, "GISE", "GIPSE")
       table5[paste0(sex, "_model_", i), 
-         c("index_eff", "index_CI", "index_pval")]  <- 
+         c("index_eff", "index_CI", "index_pval", "index_paper_pval")]  <- 
           extract_one_exp(get(paste0("model", i, "_", sex, "_fit")) , 
-                                 exposure = paste0(type, "_scaled"))[c("est", "CI", "pval")]
+                                 exposure = paste0(type, "_scaled"))[c("est", "CI", "pval","paper_pval")]
     
   }
 
@@ -443,16 +451,26 @@ table5
 ```
 
 ```
-##                male_eff     male_CI male_pval index_eff    index_CI index_pval
-## all_model_1        0.60 (0.53,0.67)  1.05E-16        NA        <NA>       <NA>
-## all_model_2        0.63  (0.56,0.7)  3.90E-14      0.92 (0.87,0.99)   1.72E-02
-## all_model_3        0.78 (0.69,0.88)  7.09E-05      0.65  (0.61,0.7)   2.87E-34
-## all_model_4        0.62  (0.55,0.7)  3.45E-14        NA        <NA>       <NA>
-## all_model_5        0.73 (0.64,0.84)  3.59E-06        NA        <NA>       <NA>
-## male_model_2         NA        <NA>      <NA>      0.93 (0.85,1.03)   1.58E-01
-## male_model_3         NA        <NA>      <NA>      0.68 (0.62,0.75)   9.93E-14
-## female_model_2       NA        <NA>      <NA>      0.92 (0.84,0.99)   3.42E-02
-## female_model_3       NA        <NA>      <NA>      0.63 (0.58,0.69)   8.53E-25
+##                male_eff     male_CI male_pval male_paper_pval index_eff
+## all_model_1        0.60 (0.53,0.67)  1.05E-16       <0.001***        NA
+## all_model_2        0.63  (0.56,0.7)  3.90E-14       <0.001***      0.92
+## all_model_3        0.78 (0.69,0.88)  7.09E-05       <0.001***      0.65
+## all_model_4        0.62  (0.55,0.7)  3.45E-14       <0.001***        NA
+## all_model_5        0.73 (0.64,0.84)  3.59E-06       <0.001***        NA
+## male_model_2         NA        <NA>      <NA>            <NA>      0.93
+## male_model_3         NA        <NA>      <NA>            <NA>      0.68
+## female_model_2       NA        <NA>      <NA>            <NA>      0.92
+## female_model_3       NA        <NA>      <NA>            <NA>      0.63
+##                   index_CI index_pval index_paper_pval
+## all_model_1           <NA>       <NA>             <NA>
+## all_model_2    (0.87,0.99)   1.72E-02           0.017*
+## all_model_3     (0.61,0.7)   2.87E-34        <0.001***
+## all_model_4           <NA>       <NA>             <NA>
+## all_model_5           <NA>       <NA>             <NA>
+## male_model_2   (0.85,1.03)   1.58E-01            0.158
+## male_model_3   (0.62,0.75)   9.93E-14        <0.001***
+## female_model_2 (0.84,0.99)   3.42E-02           0.034*
+## female_model_3 (0.58,0.69)   8.53E-25        <0.001***
 ```
 
 ```r
@@ -519,7 +537,8 @@ extract_one_exp_mi <- function(survey_imp,  model_vars, exposure,
   df_out <- data.frame(exposure = exposure, 
                        est = res[["est"]], 
                        CI = res[["CI"]], 
-                       pval = formatC(res[["pval"]], digits = round_digit, format = "E"))
+                       pval = formatC(res[["pval"]], digits = round_digit, format = "E"), 
+                       paper_pval= format_pvalue(res[["pval"]]))
  
 
   return(df_out)
@@ -538,25 +557,27 @@ table5_imp <- data.frame(row.names = c(paste0("all_model_",1:5 ),
                      male_eff = rep(NA, 9),
                      male_95_CI = NA,
                      male_pval = NA,
+                     male_paper_pval = NA,
                      index_eff = NA,
                      index_95_CI = NA,
-                     index_pval = NA)
+                     index_pval = NA,
+                     index_paper_pval = NA)
 
 
-table5_imp["all_model_1", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model1, "Sex")[, c("est", "CI", "pval")]
+table5_imp["all_model_1", c("male_eff", "male_95_CI", "male_pval", "male_paper_pval")] <- extract_one_exp_mi(survey_imp, model1, "Sex")[, c("est", "CI", "pval", "paper_pval")]
 
-table5_imp["all_model_2", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model2, "Sex")[, c("est", "CI", "pval")]
+table5_imp["all_model_2", c("male_eff", "male_95_CI", "male_pval", "male_paper_pval")] <- extract_one_exp_mi(survey_imp, model2, "Sex")[, c("est", "CI", "pval", "paper_pval")]
 
-table5_imp["all_model_2", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp, model2, "GISE_scaled")[, c("est", "CI", "pval")]
+table5_imp["all_model_2", c("index_eff", "index_95_CI", "index_pval", "index_paper_pval")] <- extract_one_exp_mi(survey_imp, model2, "GISE_scaled")[, c("est", "CI", "pval", "paper_pval")]
 
-table5_imp["all_model_3", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model3, "Sex")[, c("est", "CI", "pval")]
+table5_imp["all_model_3", c("male_eff", "male_95_CI", "male_pval", "male_paper_pval")] <- extract_one_exp_mi(survey_imp, model3, "Sex")[, c("est", "CI", "pval", "paper_pval")]
 
-table5_imp["all_model_3", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp, model3, "GIPSE_scaled")[, c("est", "CI", "pval")]
+table5_imp["all_model_3", c("index_eff", "index_95_CI", "index_pval", "index_paper_pval")] <- extract_one_exp_mi(survey_imp, model3, "GIPSE_scaled")[, c("est", "CI", "pval", "paper_pval")]
 
 
-table5_imp["all_model_4", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model4, "Sex")[, c("est", "CI", "pval")]
+table5_imp["all_model_4", c("male_eff", "male_95_CI", "male_pval", "male_paper_pval")] <- extract_one_exp_mi(survey_imp, model4, "Sex")[, c("est", "CI", "pval", "paper_pval")]
 
-table5_imp["all_model_5", c("male_eff", "male_95_CI", "male_pval")] <- extract_one_exp_mi(survey_imp, model5, "Sex")[, c("est", "CI", "pval")]
+table5_imp["all_model_5", c("male_eff", "male_95_CI", "male_pval", "male_paper_pval")] <- extract_one_exp_mi(survey_imp, model5, "Sex")[, c("est", "CI", "pval", "paper_pval")]
 
 
 
@@ -565,31 +586,41 @@ survey_imp_female <- subset(survey_imp, Sex == "Female")
 
 
 
-table5_imp["male_model_2", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_male, setdiff(model2, "Sex"), "GISE_scaled")[, c("est", "CI", "pval")]
+table5_imp["male_model_2", c("index_eff", "index_95_CI", "index_pval", "index_paper_pval")] <- extract_one_exp_mi(survey_imp_male, setdiff(model2, "Sex"), "GISE_scaled")[, c("est", "CI", "pval" ,"paper_pval")]
 
 
-table5_imp["male_model_3", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_male, setdiff(model3, "Sex"), "GIPSE_scaled")[, c("est", "CI", "pval")]
+table5_imp["male_model_3", c("index_eff", "index_95_CI", "index_pval", "index_paper_pval")] <- extract_one_exp_mi(survey_imp_male, setdiff(model3, "Sex"), "GIPSE_scaled")[, c("est", "CI", "pval" ,"paper_pval")]
 
 
-table5_imp["female_model_2", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_female, setdiff(model2, "Sex"), "GISE_scaled")[, c("est", "CI", "pval")]
+table5_imp["female_model_2", c("index_eff", "index_95_CI", "index_pval", "index_paper_pval")] <- extract_one_exp_mi(survey_imp_female, setdiff(model2, "Sex"), "GISE_scaled")[, c("est", "CI", "pval" ,"paper_pval")]
 
 
-table5_imp["female_model_3", c("index_eff", "index_95_CI", "index_pval")] <- extract_one_exp_mi(survey_imp_female, setdiff(model3, "Sex"), "GIPSE_scaled")[, c("est", "CI", "pval")]
+table5_imp["female_model_3", c("index_eff", "index_95_CI", "index_pval", "index_paper_pval")] <- extract_one_exp_mi(survey_imp_female, setdiff(model3, "Sex"), "GIPSE_scaled")[, c("est", "CI", "pval" ,"paper_pval")]
 
 table5_imp
 ```
 
 ```
-##                male_eff  male_95_CI male_pval index_eff index_95_CI index_pval
-## all_model_1        0.61 (0.55,0.68)  7.32E-20        NA        <NA>       <NA>
-## all_model_2        0.63 (0.57,0.71)  1.71E-16      0.93 (0.88,0.99)   1.62E-02
-## all_model_3        0.79 (0.71,0.89)  4.85E-05      0.65 (0.61,0.69)   3.35E-46
-## all_model_4        0.63  (0.56,0.7)  1.45E-16        NA        <NA>       <NA>
-## all_model_5        0.75 (0.66,0.84)  2.15E-06        NA        <NA>       <NA>
-## male_model_2         NA        <NA>      <NA>      0.94 (0.86,1.03)   1.94E-01
-## male_model_3         NA        <NA>      <NA>      0.68 (0.62,0.75)   3.82E-16
-## female_model_2       NA        <NA>      <NA>      0.92 (0.85,0.99)   3.03E-02
-## female_model_3       NA        <NA>      <NA>      0.63 (0.58,0.68)   4.13E-33
+##                male_eff  male_95_CI male_pval male_paper_pval index_eff
+## all_model_1        0.61 (0.55,0.68)  7.32E-20       <0.001***        NA
+## all_model_2        0.63 (0.57,0.71)  1.71E-16       <0.001***      0.93
+## all_model_3        0.79 (0.71,0.89)  4.85E-05       <0.001***      0.65
+## all_model_4        0.63  (0.56,0.7)  1.45E-16       <0.001***        NA
+## all_model_5        0.75 (0.66,0.84)  2.15E-06       <0.001***        NA
+## male_model_2         NA        <NA>      <NA>            <NA>      0.94
+## male_model_3         NA        <NA>      <NA>            <NA>      0.68
+## female_model_2       NA        <NA>      <NA>            <NA>      0.92
+## female_model_3       NA        <NA>      <NA>            <NA>      0.63
+##                index_95_CI index_pval index_paper_pval
+## all_model_1           <NA>       <NA>             <NA>
+## all_model_2    (0.88,0.99)   1.62E-02           0.016*
+## all_model_3    (0.61,0.69)   3.35E-46        <0.001***
+## all_model_4           <NA>       <NA>             <NA>
+## all_model_5           <NA>       <NA>             <NA>
+## male_model_2   (0.86,1.03)   1.94E-01            0.194
+## male_model_3   (0.62,0.75)   3.82E-16        <0.001***
+## female_model_2 (0.85,0.99)   3.03E-02           0.030*
+## female_model_3 (0.58,0.68)   4.13E-33        <0.001***
 ```
 
 ```r
