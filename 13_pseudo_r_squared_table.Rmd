@@ -1,0 +1,166 @@
+---
+title: "Prepare supplementary table: psuedo R squared from models of sex and gendered indices association with insomnia"
+output: 
+  html_document:
+    toc: true
+    keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r loading packages}
+library(tidyverse)
+library(survey)
+library(plyr)
+library(dplyr)
+library(factoextra)
+library(labelled)
+library(memisc)
+library(sjlabelled)
+library(boot)
+library(glmnet)
+library(UpSetR)
+library(naniar)
+library(RColorBrewer)
+library(jtools)
+library(reshape2)
+# source p-value formatting function
+source("format_pvalue.R")
+```
+We perform this analysis to assess how well sex and gendered indices, and also sociodemographic (and psychological) variables explain insomnia. 
+
+We only focus on complete data here. 
+
+# Load and prepare the dataset
+
+```{r}
+folder_path <- "/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gendered_indices"
+dat_no_indices <- readRDS(file.path(folder_path, "Data/Data_with_miss.Rds"))
+
+# the data with missing values:
+# load the prepared dataset with indices
+dat_miss <- readRDS(file.path(folder_path, "Data/Data_complete_case_with_indices.Rds"))
+
+
+
+# because of the survey sampling design, we need to "merge" 
+# the complete case dataset with design variables of the complete dataset
+dat <- merge(dat_miss, 
+             dat_no_indices[,c("ID", "STRAT" ,"PSU_ID", "WEIGHT_FINAL_NORM_OVERALL")], 
+             by = c("ID", "STRAT" ,"PSU_ID", "WEIGHT_FINAL_NORM_OVERALL"), all = TRUE)
+
+```
+# add scaled indices to describe effect per 1 SD increase
+
+```{r}
+survey_cc <- svydesign(id = ~PSU_ID,
+                          strata = ~STRAT,
+                          weights = ~WEIGHT_FINAL_NORM_OVERALL,
+                          nest = TRUE,
+                          data = dat)
+survey_cc <- subset(survey_cc, complete.cases(dat))
+
+
+cur_mean <- svymean(~GISE, survey_cc)[1]
+cur_sd <- sqrt(svyvar(~GISE, survey_cc)[1])
+dat_miss$GISE_scaled <- (dat_miss$GISE - cur_mean)/cur_sd
+
+cur_mean <- svymean(~GIPSE, survey_cc)[1]
+cur_sd <- sqrt(svyvar(~GIPSE, survey_cc)[1])
+dat_miss$GIPSE_scaled <- (dat_miss$GIPSE - cur_mean)/cur_sd
+
+
+# recompute the survey objects:
+dat <- merge(dat_miss, 
+             dat_no_indices[,c("ID", "STRAT" ,"PSU_ID", "WEIGHT_FINAL_NORM_OVERALL")], 
+             by = c("ID", "STRAT" ,"PSU_ID", "WEIGHT_FINAL_NORM_OVERALL"), all = TRUE)
+
+survey_cc <- svydesign(id = ~PSU_ID,
+                          strata = ~STRAT,
+                          weights = ~WEIGHT_FINAL_NORM_OVERALL,
+                          nest = TRUE,
+                          data = dat)
+survey_cc <- subset(survey_cc, complete.cases(dat))
+
+survey_cc_male <- subset(survey_cc, Sex == "Male")
+survey_cc_female <- subset(survey_cc, Sex == "Female")
+
+```
+# Prepare model variables
+
+```{r}
+
+model0 <- c("Age", "Center", "Background") # a very basic model without sex.
+model1 <- c("Age", "Center", "Background", "Sex")
+model2 <- c("Age", "Center", "Background", "Sex", "GISE_scaled")
+model3 <- c("Age", "Center", "Background", "Sex", "GIPSE_scaled")
+
+# models 4 and 5 include components of the primary and secondary indices:
+model4 <- c(model1, "Marital_status",
+                    "Income_level", 
+                    "Employment_status", 
+                    "Occupation", 
+                    "Education",
+                    "Current_Health_insurance", 
+                    "Language_pref", 
+                    "Language_acculturation", 
+                    "Social_acculturation", 
+                    "Ethnic_identity_score", 
+                    "Years_in_US")
+model5 <- c(model4, c("CESD9", "STAI10"))
+
+# for stratified model
+model0_sex_strat <- model0
+# model1_sex_strat would just be model 0
+model2_sex_strat <- setdiff(model2,  "Sex")
+model3_sex_strat <-  setdiff(model3,  "Sex")
+model4_sex_strat <- setdiff(model4,  "Sex")
+model5_sex_strat <-  setdiff(model5,  "Sex")
+
+
+```
+
+# prepare pseudo R squared table
+```{r}
+
+
+
+psrsq_table <- data.frame(model = paste0("model_",0:5 ),
+                     Sex_combined = NA,
+                     Male_stratum = NA,
+                     Female_stratum = NA)
+
+# fit models (sex combined)
+for (i in 0:5){
+  cur_fit <- svyglm(formula = as.formula(paste0("Insomnia~", paste(get(paste0("model",i)), collapse = "+"))), design = survey_cc, family = quasibinomial())
+  psrsq_table[i+1, "Sex_combined"] <- round(psrsq(cur_fit)*100, 2) # in percentages - nicer
+  
+}
+
+# male only
+for (i in c(0, 2:5)){
+  cur_fit <- svyglm(formula = as.formula(paste0("Insomnia~", paste(get(paste0("model",i, "_sex_strat")), collapse = "+"))), design = survey_cc_male, family = quasibinomial())
+  psrsq_table[i+1, "Male_stratum"] <- round(psrsq(cur_fit)*100, 2) # in percentages - nicer
+  
+}
+
+# female only
+for (i in c(0, 2:5)){
+  cur_fit <- svyglm(formula = as.formula(paste0("Insomnia~", paste(get(paste0("model",i, "_sex_strat")), collapse = "+"))), design = survey_cc_female, family = quasibinomial())
+  psrsq_table[i+1, "Female_stratum"] <- round(psrsq(cur_fit)*100, 2) # in percentages - nicer
+  
+}
+
+psrsq_table
+
+write.csv(psrsq_table, file = file.path(folder_path, "Results/Pseudo_rsq_table.csv"))
+
+```
+
+
+
+```{r}
+sessionInfo()
+```

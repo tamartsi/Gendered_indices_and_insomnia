@@ -191,7 +191,7 @@ extract_mult_exp <- function(mod, exposure, level_names, round_digit = 2){
                         CI = paste0("(", round(exp(confint[inds, 1]), round_digit), ",",
                                    round(exp(confint[inds, 2]), round_digit), ")"),
                        pval = formatC(est[inds, "Pr(>|t|)"], digits = round_digit, format = "E"), 
-                       paper_pval = format_pvalue(est[ind, "Pr(>|t|)"]))
+                       paper_pval = format_pvalue(est[inds, "Pr(>|t|)"]))
   return(df_out)
 }
 
