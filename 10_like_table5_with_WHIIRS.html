@@ -519,6 +519,8 @@ library(jtools)</code></pre>
 ## The following object is masked from &#39;package:tidyr&#39;:
 ## 
 ##     smiths</code></pre>
+<pre class="r"><code># source p-value formatting function
+source(&quot;format_pvalue.R&quot;)</code></pre>
 <div id="load-and-prepare-the-dataset" class="section level1">
 <h1>Load and prepare the dataset</h1>
 <pre class="r"><code>folder_path &lt;- &quot;/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gendered_indices&quot;
@@ -638,7 +640,8 @@ extract_one_exp &lt;- function(mod, exposure, round_digit = 2){
                        est = round(est[ind, &quot;Estimate&quot;],round_digit), 
                        CI = paste0(&quot;(&quot;, round(confint[ind, 1], round_digit),
                                    &quot;,&quot;,round(confint[ind, 2], round_digit) , &quot;)&quot;),
-                       pval = formatC(est[ind, &quot;Pr(&gt;|t|)&quot;], digits = round_digit, format = &quot;E&quot;))
+                       pval = formatC(est[ind, &quot;Pr(&gt;|t|)&quot;], digits = round_digit, format = &quot;E&quot;), 
+                       paper_pval= format_pvalue(est[ind, &quot;Pr(&gt;|t|)&quot;]))
  
 
   return(df_out)
@@ -654,7 +657,8 @@ table5 &lt;- data.frame(row.names = c(paste0(&quot;all_model_&quot;,1:5 ),
                      male_pval = NA,
                      index_eff = NA,
                      index_CI = NA,
-                     index_pval = NA)
+                     index_pval = NA, 
+                     index_paper_pval = NA)
 
 # fit models (sex combined)
 model1_fit &lt;- svyglm(formula = as.formula(paste0(&quot;WHIIRS~&quot;, paste(model1, collapse = &quot;+&quot;))), design = survey_cc, family = gaussian())
@@ -669,20 +673,20 @@ model5_fit &lt;- svyglm(formula = as.formula(paste0(&quot;WHIIRS~&quot;, paste(m
 
 for (i in 1:5){
   table5[paste0(&quot;all_model_&quot;, i), 
-         c(&quot;male_eff&quot;, &quot;male_CI&quot;, &quot;male_pval&quot;)] &lt;- 
+         c(&quot;male_eff&quot;, &quot;male_CI&quot;, &quot;male_pval&quot;, &quot;male_paper_pval&quot;)] &lt;- 
              extract_one_exp(get(paste0(&quot;model&quot;, i, &quot;_fit&quot;)) , 
-                                 exposure = &quot;Sex&quot;)[c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;)]
+                                 exposure = &quot;Sex&quot;)[c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;, &quot;paper_pval&quot;)]
 }
 
 table5[&quot;all_model_2&quot;,
-       c(&quot;index_eff&quot;, &quot;index_CI&quot;,  &quot;index_pval&quot;)]  &lt;- 
+       c(&quot;index_eff&quot;, &quot;index_CI&quot;,  &quot;index_pval&quot;, &quot;index_paper_pval&quot;)]  &lt;- 
           extract_one_exp(get(paste0(&quot;model2_fit&quot;)) , 
-                                 exposure = &quot;GISE_scaled&quot;)[c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;)]
+                                 exposure = &quot;GISE_scaled&quot;)[c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;, &quot;paper_pval&quot;)]
 
 table5[&quot;all_model_3&quot;,
-       c(&quot;index_eff&quot;, &quot;index_CI&quot;, &quot;index_pval&quot;)]  &lt;- 
+       c(&quot;index_eff&quot;, &quot;index_CI&quot;, &quot;index_pval&quot;, &quot;index_paper_pval&quot;)]  &lt;- 
           extract_one_exp(get(paste0(&quot;model3_fit&quot;)) , 
-                                 exposure = &quot;GIPSE_scaled&quot;)[c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;)]
+                                 exposure = &quot;GIPSE_scaled&quot;)[c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;, &quot;paper_pval&quot;)]
 
 
 survey_cc_male &lt;- subset(survey_cc, Sex == &quot;Male&quot;)
@@ -700,9 +704,9 @@ for (i in 2:3){
   for (sex in c(&quot;male&quot;, &quot;female&quot;)){
     type &lt;- ifelse(i == 2, &quot;GISE&quot;, &quot;GIPSE&quot;)
       table5[paste0(sex, &quot;_model_&quot;, i), 
-         c(&quot;index_eff&quot;, &quot;index_CI&quot;, &quot;index_pval&quot;)]  &lt;- 
+         c(&quot;index_eff&quot;, &quot;index_CI&quot;, &quot;index_pval&quot;, &quot;index_paper_pval&quot;)]  &lt;- 
           extract_one_exp(get(paste0(&quot;model&quot;, i, &quot;_&quot;, sex, &quot;_fit&quot;)) , 
-                                 exposure = paste0(type, &quot;_scaled&quot;))[c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;)]
+                                 exposure = paste0(type, &quot;_scaled&quot;))[c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;, &quot;paper_pval&quot;)]
     
   }
 
@@ -719,16 +723,16 @@ table5</code></pre>
 ## male_model_3         NA          &lt;NA&gt;      &lt;NA&gt;     -1.05 (-1.26,-0.85)
 ## female_model_2       NA          &lt;NA&gt;      &lt;NA&gt;     -0.22 (-0.44,-0.01)
 ## female_model_3       NA          &lt;NA&gt;      &lt;NA&gt;     -1.29  (-1.5,-1.09)
-##                index_pval
-## all_model_1          &lt;NA&gt;
-## all_model_2      1.87E-03
-## all_model_3      9.81E-50
-## all_model_4          &lt;NA&gt;
-## all_model_5          &lt;NA&gt;
-## male_model_2     9.63E-03
-## male_model_3     6.54E-22
-## female_model_2   4.16E-02
-## female_model_3   6.40E-32</code></pre>
+##                index_pval index_paper_pval male_paper_pval
+## all_model_1          &lt;NA&gt;             &lt;NA&gt;       &lt;0.001***
+## all_model_2      1.87E-03          0.002**       &lt;0.001***
+## all_model_3      9.81E-50        &lt;0.001***       &lt;0.001***
+## all_model_4          &lt;NA&gt;             &lt;NA&gt;       &lt;0.001***
+## all_model_5          &lt;NA&gt;             &lt;NA&gt;       &lt;0.001***
+## male_model_2     9.63E-03          0.010**            &lt;NA&gt;
+## male_model_3     6.54E-22        &lt;0.001***            &lt;NA&gt;
+## female_model_2   4.16E-02           0.042*            &lt;NA&gt;
+## female_model_3   6.40E-32        &lt;0.001***            &lt;NA&gt;</code></pre>
 <pre class="r"><code>write.csv(table5, file = file.path(folder_path, &quot;Results/like_table5_whiirs.csv&quot;))</code></pre>
 </div>
 <div id="table-4-using-imputed-dataset-supplementary-table-1" class="section level1">
@@ -789,7 +793,8 @@ extract_one_exp_mi &lt;- function(survey_imp,  model_vars, exposure,
   df_out &lt;- data.frame(exposure = exposure, 
                        est = res[[&quot;est&quot;]], 
                        CI = res[[&quot;CI&quot;]], 
-                       pval = formatC(res[[&quot;pval&quot;]], digits = round_digit, format = &quot;E&quot;))
+                       pval = formatC(res[[&quot;pval&quot;]], digits = round_digit, format = &quot;E&quot;), 
+                       paper_pval = format_pvalue(res[[&quot;pval&quot;]]))
  
 
   return(df_out)
@@ -803,23 +808,24 @@ extract_one_exp_mi &lt;- function(survey_imp,  model_vars, exposure,
                      male_pval = NA,
                      index_eff = NA,
                      index_95_CI = NA,
-                     index_pval = NA)
+                     index_pval = NA, 
+                     index_paper_pval = NA)
 
 
-table5_imp[&quot;all_model_1&quot;, c(&quot;male_eff&quot;, &quot;male_95_CI&quot;, &quot;male_pval&quot;)] &lt;- extract_one_exp_mi(survey_imp, model1, &quot;Sex&quot;)[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;)]
+table5_imp[&quot;all_model_1&quot;, c(&quot;male_eff&quot;, &quot;male_95_CI&quot;, &quot;male_pval&quot;, &quot;male_paper_pval&quot;)] &lt;- extract_one_exp_mi(survey_imp, model1, &quot;Sex&quot;)[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;, &quot;paper_pval&quot;)]
 
-table5_imp[&quot;all_model_2&quot;, c(&quot;male_eff&quot;, &quot;male_95_CI&quot;, &quot;male_pval&quot;)] &lt;- extract_one_exp_mi(survey_imp, model2, &quot;Sex&quot;)[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;)]
+table5_imp[&quot;all_model_2&quot;, c(&quot;male_eff&quot;, &quot;male_95_CI&quot;, &quot;male_pval&quot;, &quot;male_paper_pval&quot;)] &lt;- extract_one_exp_mi(survey_imp, model2, &quot;Sex&quot;)[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;, &quot;paper_pval&quot;)]
 
-table5_imp[&quot;all_model_2&quot;, c(&quot;index_eff&quot;, &quot;index_95_CI&quot;, &quot;index_pval&quot;)] &lt;- extract_one_exp_mi(survey_imp, model2, &quot;GISE_scaled&quot;)[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;)]
+table5_imp[&quot;all_model_2&quot;, c(&quot;index_eff&quot;, &quot;index_95_CI&quot;, &quot;index_pval&quot;, &quot;index_paper_pval&quot;)] &lt;- extract_one_exp_mi(survey_imp, model2, &quot;GISE_scaled&quot;)[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;, &quot;paper_pval&quot;)]
 
-table5_imp[&quot;all_model_3&quot;, c(&quot;male_eff&quot;, &quot;male_95_CI&quot;, &quot;male_pval&quot;)] &lt;- extract_one_exp_mi(survey_imp, model3, &quot;Sex&quot;)[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;)]
+table5_imp[&quot;all_model_3&quot;, c(&quot;male_eff&quot;, &quot;male_95_CI&quot;, &quot;male_pval&quot;, &quot;male_paper_pval&quot;)] &lt;- extract_one_exp_mi(survey_imp, model3, &quot;Sex&quot;)[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;, &quot;paper_pval&quot;)]
 
-table5_imp[&quot;all_model_3&quot;, c(&quot;index_eff&quot;, &quot;index_95_CI&quot;, &quot;index_pval&quot;)] &lt;- extract_one_exp_mi(survey_imp, model3, &quot;GIPSE_scaled&quot;)[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;)]
+table5_imp[&quot;all_model_3&quot;, c(&quot;index_eff&quot;, &quot;index_95_CI&quot;, &quot;index_pval&quot;, &quot;index_paper_pval&quot;)] &lt;- extract_one_exp_mi(survey_imp, model3, &quot;GIPSE_scaled&quot;)[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;, &quot;paper_pval&quot;)]
 
 
-table5_imp[&quot;all_model_4&quot;, c(&quot;male_eff&quot;, &quot;male_95_CI&quot;, &quot;male_pval&quot;)] &lt;- extract_one_exp_mi(survey_imp, model4, &quot;Sex&quot;)[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;)]
+table5_imp[&quot;all_model_4&quot;, c(&quot;male_eff&quot;, &quot;male_95_CI&quot;, &quot;male_pval&quot;, &quot;male_paper_pval&quot;)] &lt;- extract_one_exp_mi(survey_imp, model4, &quot;Sex&quot;)[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;, &quot;paper_pval&quot;)]
 
-table5_imp[&quot;all_model_5&quot;, c(&quot;male_eff&quot;, &quot;male_95_CI&quot;, &quot;male_pval&quot;)] &lt;- extract_one_exp_mi(survey_imp, model5, &quot;Sex&quot;)[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;)]
+table5_imp[&quot;all_model_5&quot;, c(&quot;male_eff&quot;, &quot;male_95_CI&quot;, &quot;male_pval&quot;, &quot;male_paper_pval&quot;)] &lt;- extract_one_exp_mi(survey_imp, model5, &quot;Sex&quot;)[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;, &quot;paper_pval&quot;)]
 
 
 
@@ -828,16 +834,16 @@ survey_imp_female &lt;- subset(survey_imp, Sex == &quot;Female&quot;)
 
 
 
-table5_imp[&quot;male_model_2&quot;, c(&quot;index_eff&quot;, &quot;index_95_CI&quot;, &quot;index_pval&quot;)] &lt;- extract_one_exp_mi(survey_imp_male, setdiff(model2, &quot;Sex&quot;), &quot;GISE_scaled&quot;)[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;)]
+table5_imp[&quot;male_model_2&quot;, c(&quot;index_eff&quot;, &quot;index_95_CI&quot;, &quot;index_pval&quot;, &quot;index_paper_pval&quot;)] &lt;- extract_one_exp_mi(survey_imp_male, setdiff(model2, &quot;Sex&quot;), &quot;GISE_scaled&quot;)[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;, &quot;paper_pval&quot;)]
 
 
-table5_imp[&quot;male_model_3&quot;, c(&quot;index_eff&quot;, &quot;index_95_CI&quot;, &quot;index_pval&quot;)] &lt;- extract_one_exp_mi(survey_imp_male, setdiff(model3, &quot;Sex&quot;), &quot;GIPSE_scaled&quot;)[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;)]
+table5_imp[&quot;male_model_3&quot;, c(&quot;index_eff&quot;, &quot;index_95_CI&quot;, &quot;index_pval&quot;, &quot;index_paper_pval&quot;)] &lt;- extract_one_exp_mi(survey_imp_male, setdiff(model3, &quot;Sex&quot;), &quot;GIPSE_scaled&quot;)[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;, &quot;paper_pval&quot;)]
 
 
-table5_imp[&quot;female_model_2&quot;, c(&quot;index_eff&quot;, &quot;index_95_CI&quot;, &quot;index_pval&quot;)] &lt;- extract_one_exp_mi(survey_imp_female, setdiff(model2, &quot;Sex&quot;), &quot;GISE_scaled&quot;)[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;)]
+table5_imp[&quot;female_model_2&quot;, c(&quot;index_eff&quot;, &quot;index_95_CI&quot;, &quot;index_pval&quot;, &quot;index_paper_pval&quot;)] &lt;- extract_one_exp_mi(survey_imp_female, setdiff(model2, &quot;Sex&quot;), &quot;GISE_scaled&quot;)[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;, &quot;paper_pval&quot;)]
 
 
-table5_imp[&quot;female_model_3&quot;, c(&quot;index_eff&quot;, &quot;index_95_CI&quot;, &quot;index_pval&quot;)] &lt;- extract_one_exp_mi(survey_imp_female, setdiff(model3, &quot;Sex&quot;), &quot;GIPSE_scaled&quot;)[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;)]
+table5_imp[&quot;female_model_3&quot;, c(&quot;index_eff&quot;, &quot;index_95_CI&quot;, &quot;index_pval&quot;, &quot;index_paper_pval&quot;)] &lt;- extract_one_exp_mi(survey_imp_female, setdiff(model3, &quot;Sex&quot;), &quot;GIPSE_scaled&quot;)[, c(&quot;est&quot;, &quot;CI&quot;, &quot;pval&quot;, &quot;paper_pval&quot;)]
 
 table5_imp</code></pre>
 <pre><code>##                male_eff    male_95_CI male_pval index_eff   index_95_CI
@@ -850,21 +856,21 @@ table5_imp</code></pre>
 ## male_model_3         NA          &lt;NA&gt;      &lt;NA&gt;     -1.06 (-1.25,-0.86)
 ## female_model_2       NA          &lt;NA&gt;      &lt;NA&gt;     -0.19  (-0.39,0.01)
 ## female_model_3       NA          &lt;NA&gt;      &lt;NA&gt;     -1.30 (-1.48,-1.12)
-##                index_pval
-## all_model_1          &lt;NA&gt;
-## all_model_2      2.59E-03
-## all_model_3      2.14E-71
-## all_model_4          &lt;NA&gt;
-## all_model_5          &lt;NA&gt;
-## male_model_2     1.28E-02
-## male_model_3     3.68E-26
-## female_model_2   5.93E-02
-## female_model_3   1.46E-44</code></pre>
+##                index_pval index_paper_pval male_paper_pval
+## all_model_1          &lt;NA&gt;             &lt;NA&gt;       &lt;0.001***
+## all_model_2      2.59E-03          0.003**       &lt;0.001***
+## all_model_3      2.14E-71        &lt;0.001***       &lt;0.001***
+## all_model_4          &lt;NA&gt;             &lt;NA&gt;       &lt;0.001***
+## all_model_5          &lt;NA&gt;             &lt;NA&gt;       &lt;0.001***
+## male_model_2     1.28E-02           0.013*            &lt;NA&gt;
+## male_model_3     3.68E-26        &lt;0.001***            &lt;NA&gt;
+## female_model_2   5.93E-02            0.059            &lt;NA&gt;
+## female_model_3   1.46E-44        &lt;0.001***            &lt;NA&gt;</code></pre>
 <pre class="r"><code>write.csv(table5_imp, file = file.path(folder_path, &quot;Results/like_supp_table1_whiirs.csv&quot;))</code></pre>
 <pre class="r"><code>sessionInfo()</code></pre>
 <pre><code>## R version 4.2.3 (2023-03-15)
 ## Platform: aarch64-apple-darwin20 (64-bit)
-## Running under: macOS Ventura 13.6
+## Running under: macOS 14.6.1
 ## 
 ## Matrix products: default
 ## BLAS:   /Library/Frameworks/R.framework/Versions/4.2-arm64/Resources/lib/libRblas.0.dylib
@@ -890,18 +896,18 @@ table5_imp</code></pre>
 ##  [1] ggrepel_0.9.3     Rcpp_1.0.11       foreach_1.5.2     digest_0.6.33    
 ##  [5] utf8_1.2.3        R6_2.5.1          visdat_0.6.0      evaluate_0.21    
 ##  [9] pillar_1.9.0      rlang_1.1.1       rstudioapi_0.15.0 data.table_1.14.8
-## [13] car_3.1-2         jquerylib_0.1.4   rmarkdown_2.23    splines_4.2.3    
+## [13] car_3.1-2         jquerylib_0.1.4   rmarkdown_2.27    splines_4.2.3    
 ## [17] pander_0.6.5      munsell_0.5.0     compiler_4.2.3    xfun_0.39        
-## [21] pkgconfig_2.0.3   shape_1.4.6       htmltools_0.5.5   mitools_2.4      
+## [21] pkgconfig_2.0.3   shape_1.4.6       htmltools_0.5.8.1 mitools_2.4      
 ## [25] insight_0.19.3    tidyselect_1.2.0  gridExtra_2.3     codetools_0.2-19 
 ## [29] fansi_1.0.4       crayon_1.5.2      tzdb_0.4.0        withr_2.5.0      
 ## [33] jsonlite_1.8.7    gtable_0.3.3      lifecycle_1.0.3   DBI_1.1.3        
 ## [37] magrittr_2.0.3    scales_1.2.1      cli_3.6.1         stringi_1.7.12   
-## [41] cachem_1.0.8      carData_3.0-5     bslib_0.5.0       generics_0.1.3   
+## [41] cachem_1.0.8      carData_3.0-5     bslib_0.7.0       generics_0.1.3   
 ## [45] vctrs_0.6.3       iterators_1.0.14  tools_4.2.3       glue_1.6.2       
 ## [49] hms_1.1.3         abind_1.4-5       fastmap_1.1.1     yaml_2.3.7       
 ## [53] timechange_0.2.0  colorspace_2.1-0  knitr_1.43        haven_2.5.3      
-## [57] sass_0.4.7</code></pre>
+## [57] sass_0.4.9</code></pre>
 </div>
 
 

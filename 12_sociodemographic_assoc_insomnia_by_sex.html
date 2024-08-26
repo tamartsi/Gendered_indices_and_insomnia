@@ -555,6 +555,8 @@ library(svyVGAM)</code></pre>
 ## The following object is masked from &#39;package:tidyr&#39;:
 ## 
 ##     smiths</code></pre>
+<pre class="r"><code># source p-value formatting function
+source(&quot;format_pvalue.R&quot;)</code></pre>
 <div id="read-in-the-data" class="section level1">
 <h1>Read in the data</h1>
 <pre class="r"><code>folder_path &lt;- &quot;/Users/tamarsofer/Library/CloudStorage/OneDrive-BethIsraelLaheyHealth/Ongoing_papers/2022_gendered_indices&quot;
@@ -629,13 +631,15 @@ outcome</h1>
                        est = round(exp(est[inds, &quot;Estimate&quot;]),round_digit), 
                         CI = paste0(&quot;(&quot;, round(exp(confint[inds, 1]), round_digit), &quot;,&quot;,
                                    round(exp(confint[inds, 2]), round_digit), &quot;)&quot;),
-                       pval = formatC(est[inds, &quot;Pr(&gt;|t|)&quot;], digits = round_digit, format = &quot;E&quot;))
+                       pval = formatC(est[inds, &quot;Pr(&gt;|t|)&quot;], digits = round_digit, format = &quot;E&quot;),
+                       paper_pval = format_pvalue(est[inds, &quot;Pr(&gt;|t|)&quot;]))
   } else{ # WHIIRS is the outcome, not exponentiating estimates
      df_out &lt;- data.frame(exposure = paste0(exposure,&quot;: &quot;, level_names), 
                        est = round(est[inds, &quot;Estimate&quot;],round_digit), 
                         CI = paste0(&quot;(&quot;, round(confint[inds, 1], round_digit), &quot;,&quot;,
                                    round(confint[inds, 2], round_digit), &quot;)&quot;),
-                       pval = formatC(est[inds, &quot;Pr(&gt;|t|)&quot;], digits = round_digit, format = &quot;E&quot;))
+                       pval = formatC(est[inds, &quot;Pr(&gt;|t|)&quot;], digits = round_digit, format = &quot;E&quot;), 
+                       paper_pval = format_pvalue(est[inds, &quot;Pr(&gt;|t|)&quot;]))
     
   }
   return(df_out)
@@ -653,14 +657,16 @@ extract_one_exp &lt;- function(mod, exposure, round_digit = 2, insomnia = TRUE){
                        est = round(exp(est[ind, &quot;Estimate&quot;]),round_digit),
                         CI = paste0(&quot;(&quot;, round(exp(confint[ind, 1]), round_digit), &quot;,&quot;,
                                    round(exp(confint[ind, 2]), round_digit), &quot;)&quot;),
-                       pval = formatC(est[ind, &quot;Pr(&gt;|t|)&quot;], digits = round_digit, format = &quot;E&quot;))
+                       pval = formatC(est[ind, &quot;Pr(&gt;|t|)&quot;], digits = round_digit, format = &quot;E&quot;),
+                       paper_pval = format_pvalue(est[ind, &quot;Pr(&gt;|t|)&quot;]))
     
-  } else{  # WHIIRS is the outcome, not exponentiating estimates
+  } else{  # WHIIRS is the outcome, not exponentiation estimates
     df_out &lt;- data.frame(exposure = exposure, 
                        est = round(est[ind, &quot;Estimate&quot;],round_digit),
                         CI = paste0(&quot;(&quot;, round(confint[ind, 1], round_digit), &quot;,&quot;,
                                    round(confint[ind, 2], round_digit), &quot;)&quot;),
-                       pval = formatC(est[ind, &quot;Pr(&gt;|t|)&quot;], digits = round_digit, format = &quot;E&quot;))
+                       pval = formatC(est[ind, &quot;Pr(&gt;|t|)&quot;], digits = round_digit, format = &quot;E&quot;),
+                       paper_pval = format_pvalue(est[ind, &quot;Pr(&gt;|t|)&quot;]))
     
   }
   
@@ -738,15 +744,16 @@ rownames(insomnia_male_tab) &lt;- paste0(&quot;r&quot;, 1:nrow(insomnia_male_tab
 interaction_tab &lt;- do.call(rbind, interaction_out)
 rownames(interaction_tab) &lt;- paste0(&quot;r&quot;, 1:nrow(interaction_tab))
 
-colnames(insomnia_female_tab) &lt;- c(&quot;exposure&quot;, &quot;female_est&quot;, &quot;female_CI&quot;, &quot;female_pval&quot;)
-colnames(insomnia_male_tab) &lt;- c(&quot;exposure&quot;, &quot;male_est&quot;, &quot;male_CI&quot;, &quot;male_pval&quot;)
-colnames(interaction_tab) &lt;- c(&quot;exposure&quot;, &quot;interation_est&quot;, &quot;interaction_CI&quot;, &quot;interaction_pval&quot;)
+colnames(insomnia_female_tab) &lt;- c(&quot;exposure&quot;, &quot;female_est&quot;, &quot;female_CI&quot;, &quot;female_pval&quot;, &quot;female_paper_pval&quot;)
+colnames(insomnia_male_tab) &lt;- c(&quot;exposure&quot;, &quot;male_est&quot;, &quot;male_CI&quot;, &quot;male_pval&quot;, &quot;male_paper_pval&quot;)
+colnames(interaction_tab) &lt;- c(&quot;exposure&quot;, &quot;interation_est&quot;, &quot;interaction_CI&quot;, &quot;interaction_pval&quot;, &quot;interaction_paper_pval&quot;)
 
 combined_tab &lt;- cbind(insomnia_female_tab,
-                      insomnia_male_tab[, c(&quot;exposure&quot;, &quot;male_est&quot;, &quot;male_CI&quot;, &quot;male_pval&quot;)],
+                      insomnia_male_tab[, c(&quot;exposure&quot;, &quot;male_est&quot;, &quot;male_CI&quot;, &quot;male_pval&quot;,&quot;male_paper_pval&quot;)],
                       interaction_tab$interaction_pval)
 
 colnames(combined_tab)[grep(&quot;interaction_pval&quot;, colnames(combined_tab))] &lt;- &quot;Interaction_pval&quot;
+colnames(combined_tab)[grep(&quot;interaction_paper_pval&quot;, colnames(combined_tab))] &lt;- &quot;Interaction_paper_pval&quot;
 write.csv(combined_tab, file = file.path(folder_path, &quot;Results/All_vars_assoc_insomnia_by_sex.csv&quot;))
 
 combined_tab</code></pre>
@@ -774,30 +781,30 @@ combined_tab</code></pre>
 ## r21                                                                         CESD9
 ## r22                                                                 Language_pref
 ## r23                                                      Current_Health_insurance
-##     female_est   female_CI female_pval
-## r1        0.89 (0.74,1.08)    2.50E-01
-## r2        1.10 (0.88,1.37)    4.15E-01
-## r3        1.14 (0.87,1.49)    3.40E-01
-## r4        0.97 (0.75,1.26)    8.33E-01
-## r5        1.04 (0.82,1.32)    7.52E-01
-## r6        1.08 (0.84,1.38)    5.58E-01
-## r7        0.99  (0.82,1.2)    8.97E-01
-## r8        0.85 (0.68,1.06)    1.45E-01
-## r9        0.73 (0.53,0.99)    4.10E-02
-## r10       0.51 (0.33,0.78)    1.94E-03
-## r11       0.79 (0.65,0.96)    1.86E-02
-## r12       0.71  (0.6,0.84)    5.62E-05
-## r13       0.94 (0.75,1.18)    5.88E-01
-## r14       0.80 (0.67,0.96)    1.58E-02
-## r15       1.13 (0.94,1.36)    1.90E-01
-## r16       1.47 (1.13,1.91)    3.64E-03
-## r17       1.12 (1.02,1.21)    1.23E-02
-## r18       1.05 (0.91,1.22)    4.94E-01
-## r19       0.98 (0.86,1.12)    7.97E-01
-## r20       1.12  (1.1,1.13)    4.73E-47
-## r21       1.13 (1.11,1.15)    4.39E-45
-## r22       1.21  (0.97,1.5)    8.59E-02
-## r23       0.84     (0.7,1)    4.70E-02
+##     female_est   female_CI female_pval female_paper_pval
+## r1        0.89 (0.74,1.08)    2.50E-01             0.250
+## r2        1.10 (0.88,1.37)    4.15E-01             0.415
+## r3        1.14 (0.87,1.49)    3.40E-01             0.340
+## r4        0.97 (0.75,1.26)    8.33E-01             0.833
+## r5        1.04 (0.82,1.32)    7.52E-01             0.752
+## r6        1.08 (0.84,1.38)    5.58E-01             0.558
+## r7        0.99  (0.82,1.2)    8.97E-01             0.897
+## r8        0.85 (0.68,1.06)    1.45E-01             0.145
+## r9        0.73 (0.53,0.99)    4.10E-02            0.041*
+## r10       0.51 (0.33,0.78)    1.94E-03           0.002**
+## r11       0.79 (0.65,0.96)    1.86E-02            0.019*
+## r12       0.71  (0.6,0.84)    5.62E-05         &lt;0.001***
+## r13       0.94 (0.75,1.18)    5.88E-01             0.588
+## r14       0.80 (0.67,0.96)    1.58E-02            0.016*
+## r15       1.13 (0.94,1.36)    1.90E-01             0.190
+## r16       1.47 (1.13,1.91)    3.64E-03           0.004**
+## r17       1.12 (1.02,1.21)    1.23E-02            0.012*
+## r18       1.05 (0.91,1.22)    4.94E-01             0.494
+## r19       0.98 (0.86,1.12)    7.97E-01             0.797
+## r20       1.12  (1.1,1.13)    4.73E-47         &lt;0.001***
+## r21       1.13 (1.11,1.15)    4.39E-45         &lt;0.001***
+## r22       1.21  (0.97,1.5)    8.59E-02             0.086
+## r23       0.84     (0.7,1)    4.70E-02            0.047*
 ##                                                                          exposure
 ## r1                               Marital_status: Married or living with a partner
 ## r2                                Marital_status: Separated,divorced,or widow(er)
@@ -822,30 +829,30 @@ combined_tab</code></pre>
 ## r21                                                                         CESD9
 ## r22                                                                 Language_pref
 ## r23                                                      Current_Health_insurance
-##     male_est     male_CI male_pval Interaction_pval
-## r1      0.74 (0.58,0.93)  9.13E-03         1.46E-01
-## r2      0.84 (0.63,1.12)  2.29E-01         8.38E-02
-## r3      1.01 (0.74,1.39)  9.45E-01         6.65E-01
-## r4      1.14 (0.92,1.43)  2.26E-01         4.37E-01
-## r5      0.93 (0.67,1.28)  6.39E-01         5.16E-01
-## r6      1.13 (0.87,1.46)  3.55E-01         7.53E-01
-## r7      0.70 (0.54,0.92)  1.11E-02         5.16E-02
-## r8      0.61  (0.46,0.8)  5.18E-04         6.82E-02
-## r9      0.65  (0.47,0.9)  1.06E-02         6.51E-01
-## r10     0.50 (0.28,0.89)  1.90E-02         9.23E-01
-## r11     0.77 (0.59,1.01)  5.92E-02         9.45E-01
-## r12     0.66 (0.54,0.81)  6.27E-05         7.61E-01
-## r13     1.10 (0.87,1.39)  4.26E-01         2.62E-01
-## r14     1.07 (0.86,1.35)  5.31E-01         5.01E-02
-## r15     1.12 (0.89,1.42)  3.28E-01         6.57E-01
-## r16     1.54 (1.13,2.11)  7.14E-03         7.61E-01
-## r17     1.15 (1.04,1.27)  7.65E-03         3.75E-01
-## r18     0.97 (0.82,1.16)  7.72E-01         5.91E-01
-## r19     0.97 (0.83,1.14)  7.30E-01         8.69E-01
-## r20     1.15 (1.13,1.17)  4.91E-44         7.01E-03
-## r21     1.13  (1.1,1.15)  8.40E-27         7.05E-01
-## r22     1.43 (1.11,1.84)  5.08E-03         1.88E-01
-## r23     0.90 (0.74,1.09)  2.74E-01         9.09E-01</code></pre>
+##     male_est     male_CI male_pval male_paper_pval Interaction_pval
+## r1      0.74 (0.58,0.93)  9.13E-03         0.009**         1.46E-01
+## r2      0.84 (0.63,1.12)  2.29E-01           0.229         8.38E-02
+## r3      1.01 (0.74,1.39)  9.45E-01           0.945         6.65E-01
+## r4      1.14 (0.92,1.43)  2.26E-01           0.226         4.37E-01
+## r5      0.93 (0.67,1.28)  6.39E-01           0.639         5.16E-01
+## r6      1.13 (0.87,1.46)  3.55E-01           0.355         7.53E-01
+## r7      0.70 (0.54,0.92)  1.11E-02          0.011*         5.16E-02
+## r8      0.61  (0.46,0.8)  5.18E-04       &lt;0.001***         6.82E-02
+## r9      0.65  (0.47,0.9)  1.06E-02          0.011*         6.51E-01
+## r10     0.50 (0.28,0.89)  1.90E-02          0.019*         9.23E-01
+## r11     0.77 (0.59,1.01)  5.92E-02           0.059         9.45E-01
+## r12     0.66 (0.54,0.81)  6.27E-05       &lt;0.001***         7.61E-01
+## r13     1.10 (0.87,1.39)  4.26E-01           0.426         2.62E-01
+## r14     1.07 (0.86,1.35)  5.31E-01           0.531         5.01E-02
+## r15     1.12 (0.89,1.42)  3.28E-01           0.328         6.57E-01
+## r16     1.54 (1.13,2.11)  7.14E-03         0.007**         7.61E-01
+## r17     1.15 (1.04,1.27)  7.65E-03         0.008**         3.75E-01
+## r18     0.97 (0.82,1.16)  7.72E-01           0.772         5.91E-01
+## r19     0.97 (0.83,1.14)  7.30E-01           0.730         8.69E-01
+## r20     1.15 (1.13,1.17)  4.91E-44       &lt;0.001***         7.01E-03
+## r21     1.13  (1.1,1.15)  8.40E-27       &lt;0.001***         7.05E-01
+## r22     1.43 (1.11,1.84)  5.08E-03         0.005**         1.88E-01
+## r23     0.90 (0.74,1.09)  2.74E-01           0.274         9.09E-01</code></pre>
 </div>
 <div id="the-same-analysis-with-whiirs-as-the-outcome" class="section level1">
 <h1>The same analysis with WHIIRS as the outcome</h1>
@@ -917,15 +924,16 @@ rownames(whiirs_male_tab) &lt;- paste0(&quot;r&quot;, 1:nrow(whiirs_male_tab))
 interaction_tab &lt;- do.call(rbind, interaction_out)
 rownames(interaction_tab) &lt;- paste0(&quot;r&quot;, 1:nrow(interaction_tab))
 
-colnames(whiirs_female_tab) &lt;- c(&quot;exposure&quot;, &quot;female_est&quot;, &quot;female_CI&quot;, &quot;female_pval&quot;)
-colnames(whiirs_male_tab) &lt;- c(&quot;exposure&quot;, &quot;male_est&quot;, &quot;male_CI&quot;, &quot;male_pval&quot;)
-colnames(interaction_tab) &lt;- c(&quot;exposure&quot;, &quot;interation_est&quot;, &quot;interaction_CI&quot;, &quot;interaction_pval&quot;)
+colnames(whiirs_female_tab) &lt;- c(&quot;exposure&quot;, &quot;female_est&quot;, &quot;female_CI&quot;, &quot;female_pval&quot;, &quot;female_paper_pval&quot;)
+colnames(whiirs_male_tab) &lt;- c(&quot;exposure&quot;, &quot;male_est&quot;, &quot;male_CI&quot;, &quot;male_pval&quot;, &quot;male_paper_pval&quot;)
+colnames(interaction_tab) &lt;- c(&quot;exposure&quot;, &quot;interation_est&quot;, &quot;interaction_CI&quot;, &quot;interaction_pval&quot;, &quot;interaction_paper_pval&quot;)
 
 combined_tab &lt;- cbind(whiirs_female_tab,
-                      whiirs_male_tab[, c(&quot;exposure&quot;, &quot;male_est&quot;, &quot;male_CI&quot;, &quot;male_pval&quot;)],
+                      whiirs_male_tab[, c(&quot;exposure&quot;, &quot;male_est&quot;, &quot;male_CI&quot;, &quot;male_pval&quot;, &quot;male_paper_pval&quot;)],
                       interaction_tab$interaction_pval)
 
 colnames(combined_tab)[grep(&quot;interaction_pval&quot;, colnames(combined_tab))] &lt;- &quot;Interaction_pval&quot;
+colnames(combined_tab)[grep(&quot;interaction_paper_pval&quot;, colnames(combined_tab))] &lt;- &quot;Interaction_paper_pval&quot;
 
 write.csv(combined_tab, file = file.path(folder_path, &quot;Results/All_vars_assoc_WHIIRS_by_sex.csv&quot;))
 
@@ -954,30 +962,30 @@ combined_tab</code></pre>
 ## r21                                                                         CESD9
 ## r22                                                                 Language_pref
 ## r23                                                      Current_Health_insurance
-##     female_est   female_CI female_pval
-## r1        0.67 (0.43,1.04)    7.31E-02
-## r2        1.48 (0.85,2.58)    1.65E-01
-## r3        1.12 (0.61,2.04)    7.14E-01
-## r4        0.98 (0.58,1.65)    9.34E-01
-## r5        1.01  (0.59,1.7)    9.85E-01
-## r6        1.21 (0.67,2.18)    5.26E-01
-## r7        0.62    (0.38,1)    4.78E-02
-## r8        0.38 (0.22,0.65)    4.93E-04
-## r9        0.31 (0.17,0.59)    3.85E-04
-## r10       0.16 (0.06,0.41)    1.34E-04
-## r11       0.54 (0.34,0.84)    6.68E-03
-## r12       0.38 (0.25,0.57)    3.15E-06
-## r13       0.76 (0.46,1.26)    2.90E-01
-## r14       0.49 (0.31,0.75)    1.18E-03
-## r15       1.27 (0.85,1.92)    2.48E-01
-## r16       2.77 (1.57,4.86)    4.20E-04
-## r17       1.43 (1.19,1.71)    1.35E-04
-## r18       1.11 (0.78,1.57)    5.79E-01
-## r19       0.90 (0.66,1.24)    5.24E-01
-## r20       1.38 (1.34,1.41)    8.49E-89
-## r21       1.43 (1.39,1.48)    2.02E-81
-## r22       1.78 (1.13,2.82)    1.33E-02
-## r23       0.71 (0.48,1.04)    7.77E-02
+##     female_est   female_CI female_pval female_paper_pval
+## r1        0.67 (0.43,1.04)    7.31E-02             0.073
+## r2        1.48 (0.85,2.58)    1.65E-01             0.165
+## r3        1.12 (0.61,2.04)    7.14E-01             0.714
+## r4        0.98 (0.58,1.65)    9.34E-01             0.934
+## r5        1.01  (0.59,1.7)    9.85E-01             0.985
+## r6        1.21 (0.67,2.18)    5.26E-01             0.526
+## r7        0.62    (0.38,1)    4.78E-02            0.048*
+## r8        0.38 (0.22,0.65)    4.93E-04         &lt;0.001***
+## r9        0.31 (0.17,0.59)    3.85E-04         &lt;0.001***
+## r10       0.16 (0.06,0.41)    1.34E-04         &lt;0.001***
+## r11       0.54 (0.34,0.84)    6.68E-03           0.007**
+## r12       0.38 (0.25,0.57)    3.15E-06         &lt;0.001***
+## r13       0.76 (0.46,1.26)    2.90E-01             0.290
+## r14       0.49 (0.31,0.75)    1.18E-03           0.001**
+## r15       1.27 (0.85,1.92)    2.48E-01             0.248
+## r16       2.77 (1.57,4.86)    4.20E-04         &lt;0.001***
+## r17       1.43 (1.19,1.71)    1.35E-04         &lt;0.001***
+## r18       1.11 (0.78,1.57)    5.79E-01             0.579
+## r19       0.90 (0.66,1.24)    5.24E-01             0.524
+## r20       1.38 (1.34,1.41)    8.49E-89         &lt;0.001***
+## r21       1.43 (1.39,1.48)    2.02E-81         &lt;0.001***
+## r22       1.78 (1.13,2.82)    1.33E-02            0.013*
+## r23       0.71 (0.48,1.04)    7.77E-02             0.078
 ##                                                                          exposure
 ## r1                               Marital_status: Married or living with a partner
 ## r2                                Marital_status: Separated,divorced,or widow(er)
@@ -1002,34 +1010,34 @@ combined_tab</code></pre>
 ## r21                                                                         CESD9
 ## r22                                                                 Language_pref
 ## r23                                                      Current_Health_insurance
-##     male_est     male_CI male_pval Interaction_pval
-## r1      0.50 (0.31,0.81)  4.51E-03         4.79E-01
-## r2      0.84  (0.44,1.6)  6.03E-01         8.62E-02
-## r3      1.61 (0.82,3.15)  1.67E-01         4.18E-01
-## r4      1.62 (1.05,2.51)  2.97E-02         2.56E-01
-## r5      1.06 (0.57,1.97)  8.42E-01         8.95E-01
-## r6      1.16 (0.71,1.91)  5.51E-01         8.49E-01
-## r7      0.33 (0.16,0.66)  1.83E-03         1.83E-01
-## r8      0.22 (0.11,0.45)  4.30E-05         3.82E-01
-## r9      0.27 (0.12,0.57)  6.76E-04         9.41E-01
-## r10     0.18 (0.07,0.46)  4.16E-04         6.36E-01
-## r11     0.41 (0.24,0.69)  7.73E-04         7.86E-01
-## r12     0.30  (0.2,0.45)  7.39E-09         7.28E-01
-## r13     0.97  (0.59,1.6)  9.12E-01         2.71E-01
-## r14     1.01 (0.63,1.62)  9.72E-01         1.22E-02
-## r15     1.30 (0.83,2.04)  2.58E-01         4.98E-01
-## r16     4.21 (2.36,7.48)  1.25E-06         3.38E-01
-## r17     1.60 (1.33,1.93)  8.85E-07         3.00E-01
-## r18     1.28 (0.94,1.74)  1.14E-01         5.51E-01
-## r19     0.92 (0.68,1.24)  5.64E-01         9.35E-01
-## r20     1.44 (1.39,1.49)  6.27E-68         4.17E-02
-## r21     1.39 (1.34,1.45)  3.01E-49         1.35E-01
-## r22     2.84 (1.74,4.64)  3.25E-05         2.07E-01
-## r23     0.83 (0.57,1.22)  3.53E-01         6.80E-01</code></pre>
+##     male_est     male_CI male_pval male_paper_pval Interaction_pval
+## r1      0.50 (0.31,0.81)  4.51E-03         0.005**         4.79E-01
+## r2      0.84  (0.44,1.6)  6.03E-01           0.603         8.62E-02
+## r3      1.61 (0.82,3.15)  1.67E-01           0.167         4.18E-01
+## r4      1.62 (1.05,2.51)  2.97E-02          0.030*         2.56E-01
+## r5      1.06 (0.57,1.97)  8.42E-01           0.842         8.95E-01
+## r6      1.16 (0.71,1.91)  5.51E-01           0.551         8.49E-01
+## r7      0.33 (0.16,0.66)  1.83E-03         0.002**         1.83E-01
+## r8      0.22 (0.11,0.45)  4.30E-05       &lt;0.001***         3.82E-01
+## r9      0.27 (0.12,0.57)  6.76E-04       &lt;0.001***         9.41E-01
+## r10     0.18 (0.07,0.46)  4.16E-04       &lt;0.001***         6.36E-01
+## r11     0.41 (0.24,0.69)  7.73E-04       &lt;0.001***         7.86E-01
+## r12     0.30  (0.2,0.45)  7.39E-09       &lt;0.001***         7.28E-01
+## r13     0.97  (0.59,1.6)  9.12E-01           0.912         2.71E-01
+## r14     1.01 (0.63,1.62)  9.72E-01           0.972         1.22E-02
+## r15     1.30 (0.83,2.04)  2.58E-01           0.258         4.98E-01
+## r16     4.21 (2.36,7.48)  1.25E-06       &lt;0.001***         3.38E-01
+## r17     1.60 (1.33,1.93)  8.85E-07       &lt;0.001***         3.00E-01
+## r18     1.28 (0.94,1.74)  1.14E-01           0.114         5.51E-01
+## r19     0.92 (0.68,1.24)  5.64E-01           0.564         9.35E-01
+## r20     1.44 (1.39,1.49)  6.27E-68       &lt;0.001***         4.17E-02
+## r21     1.39 (1.34,1.45)  3.01E-49       &lt;0.001***         1.35E-01
+## r22     2.84 (1.74,4.64)  3.25E-05       &lt;0.001***         2.07E-01
+## r23     0.83 (0.57,1.22)  3.53E-01           0.353         6.80E-01</code></pre>
 <pre class="r"><code>sessionInfo()</code></pre>
 <pre><code>## R version 4.2.3 (2023-03-15)
 ## Platform: aarch64-apple-darwin20 (64-bit)
-## Running under: macOS Ventura 13.6
+## Running under: macOS 14.6.1
 ## 
 ## Matrix products: default
 ## BLAS:   /Library/Frameworks/R.framework/Versions/4.2-arm64/Resources/lib/libRblas.0.dylib
@@ -1054,11 +1062,11 @@ combined_tab</code></pre>
 ## 
 ## loaded via a namespace (and not attached):
 ##  [1] nlme_3.1-162      bit64_4.0.5       insight_0.19.3    tools_4.2.3      
-##  [5] bslib_0.5.0       utf8_1.2.3        R6_2.5.1          DBI_1.1.3        
+##  [5] bslib_0.7.0       utf8_1.2.3        R6_2.5.1          DBI_1.1.3        
 ##  [9] colorspace_2.1-0  withr_2.5.0       tidyselect_1.2.0  gridExtra_2.3    
-## [13] bit_4.0.5         compiler_4.2.3    cli_3.6.1         sass_0.4.7       
-## [17] scales_1.2.1      digest_0.6.33     minqa_1.2.5       rmarkdown_2.23   
-## [21] pkgconfig_2.0.3   htmltools_0.5.5   lme4_1.1-34       fastmap_1.1.1    
+## [13] bit_4.0.5         compiler_4.2.3    cli_3.6.1         sass_0.4.9       
+## [17] scales_1.2.1      digest_0.6.33     minqa_1.2.5       rmarkdown_2.27   
+## [21] pkgconfig_2.0.3   htmltools_0.5.8.1 lme4_1.1-34       fastmap_1.1.1    
 ## [25] rlang_1.1.1       rstudioapi_0.15.0 shape_1.4.6       jquerylib_0.1.4  
 ## [29] generics_0.1.3    jsonlite_1.8.7    vroom_1.6.3       car_3.1-2        
 ## [33] magrittr_2.0.3    Rcpp_1.0.11       munsell_0.5.0     fansi_1.0.4      

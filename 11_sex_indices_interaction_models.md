@@ -227,6 +227,11 @@ library(reshape2)
 ##     smiths
 ```
 
+```r
+# source p-value formatting function
+source("format_pvalue.R")
+```
+
 # Load and prepare the dataset
 
 
@@ -350,7 +355,8 @@ extract_one_exp_logistic <- function(mod, exposure, round_digit = 2){
                        est = round(exp(est[ind, "Estimate"]),round_digit), 
                        CI = paste0("(", round(exp(confint[ind, 1]), round_digit),
                                    ",",round(exp(confint[ind, 2]), round_digit) , ")"),
-                       pval = formatC(est[ind, "Pr(>|t|)"], digits = round_digit, format = "E"))
+                       pval = formatC(est[ind, "Pr(>|t|)"], digits = round_digit, format = "E"), 
+                       paper_pval = format_pvalue(est[ind, "Pr(>|t|)"]))
  
 
   return(df_out)
@@ -368,7 +374,8 @@ extract_one_exp_linear <- function(mod, exposure, round_digit = 2){
                        est = round(est[ind, "Estimate"],round_digit), 
                        CI = paste0("(", round(confint[ind, 1], round_digit),
                                    ",",round(confint[ind, 2], round_digit) , ")"),
-                       pval = formatC(est[ind, "Pr(>|t|)"], digits = round_digit, format = "E"))
+                       pval = formatC(est[ind, "Pr(>|t|)"], digits = round_digit, format = "E"), 
+                       paper_pval = format_pvalue(est[ind, "Pr(>|t|)"]))
  
 
   return(df_out)
@@ -387,12 +394,15 @@ table6 <- data.frame(row.names = c("Insomnia_with_GISE",
                      male_eff = rep(NA, 4),
                      male_CI = NA,
                      male_pval = NA,
+                     male_paper_pval = NA,
                      index_eff = NA,
                      index_CI = NA,
                      index_pval = NA,
+                     index_paper_pval = NA,
                      interaction_eff = NA,
                      interaction_CI = NA,
-                     interaction_pval = NA)
+                     interaction_pval = NA,
+                     interaction_paper_pval = NA)
 
 # fit models (sex combined)
 model1_fit_insomnia <- svyglm(formula = as.formula(paste0("Insomnia~", paste(model1, collapse = "+"))), design = survey_cc, family = quasibinomial())
@@ -413,22 +423,22 @@ row_model <- data.frame(row_ind = 1:4, row_name = row.names(table6),
 
 for (i in 1:4){
   table6[i,
-       c("index_eff", "index_CI",  "index_pval")]  <- 
+       c("index_eff", "index_CI",  "index_pval", "index_paper_pval")]  <- 
           extract_one_exp(get(paste0(row_model$model_name[i])) , 
                                  exposure = row_model$index_name[i],
-                            model_name = row_model$model_name[i])[c("est", "CI", "pval")]
+                            model_name = row_model$model_name[i])[c("est", "CI", "pval", "paper_pval")]
   
     table6[i,
-       c("male_eff", "male_CI",  "male_pval")]  <- 
+       c("male_eff", "male_CI",  "male_pval", "male_paper_pval")]  <- 
           extract_one_exp(get(paste0(row_model$model_name[i])),
                             model_name = row_model$model_name[i] , 
-                                 exposure = "SexMale")[c("est", "CI", "pval")]
+                                 exposure = "SexMale")[c("est", "CI", "pval", "paper_pval")]
     
       table6[i,
-       c("interaction_eff", "interaction_CI",  "interaction_pval")]  <- 
+       c("interaction_eff", "interaction_CI",  "interaction_pval", "interaction_paper_pval")]  <- 
           extract_one_exp(get(paste0(row_model$model_name[i])),
                             model_name = row_model$model_name[i], 
-                                 exposure = paste0("SexMale:", row_model$index_name[i]))[c("est", "CI", "pval")]
+                                 exposure = paste0("SexMale:", row_model$index_name[i]))[c("est", "CI", "pval","paper_pval")]
   
 }
 
@@ -519,7 +529,8 @@ extract_one_exp_mi <- function(survey_imp,  model_vars, exposure,
   df_out <- data.frame(exposure = exposure, 
                        est = res[["est"]], 
                        CI = res[["CI"]], 
-                       pval = formatC(res[["pval"]], digits = round_digit, format = "E"))
+                       pval = formatC(res[["pval"]], digits = round_digit, format = "E"), 
+                       paper_pval = format_pvalue(res[["pval"]]))
  
 
   return(df_out)
@@ -539,12 +550,15 @@ table6_imp <- data.frame(row.names = c("Insomnia_with_GISE",
                      male_eff = rep(NA, 4),
                      male_CI = NA,
                      male_pval = NA,
+                     male_paper_pval = NA,
                      index_eff = NA,
                      index_CI = NA,
                      index_pval = NA,
+                     index_paper_pval = NA,
                      interaction_eff = NA,
                      interaction_CI = NA,
-                      interaction_pval = NA)
+                      interaction_pval = NA, 
+                     interaction_paper_pval = NA)
 
 
 
@@ -564,27 +578,27 @@ for (i in 1:4){
   }
   
   table6_imp[i,
-       c("index_eff", "index_CI",  "index_pval")]  <- 
+       c("index_eff", "index_CI",  "index_pval", "index_paper_pval")]  <- 
           extract_one_exp_mi(survey_imp, 
               model_vars = model_vars, 
               exposure = row_model$index_name[i], 
-               Insomnia = ifelse(i %in% c(1,2), TRUE, FALSE))[, c("est", "CI", "pval")]
+               Insomnia = ifelse(i %in% c(1,2), TRUE, FALSE))[, c("est", "CI", "pval", "paper_pval")]
   
   
         
     table6_imp[i,
-       c("male_eff", "male_CI",  "male_pval")]  <- 
+       c("male_eff", "male_CI",  "male_pval", "male_paper_pval")]  <- 
               extract_one_exp_mi(survey_imp, 
                     model_vars = model_vars, 
                      exposure =  "SexMale", 
-                     Insomnia = ifelse(i %in% c(1,2), TRUE, FALSE))[, c("est", "CI", "pval")]
+                     Insomnia = ifelse(i %in% c(1,2), TRUE, FALSE))[, c("est", "CI", "pval", "paper_pval")]
     
     
-     table6_imp[i, c("interaction_eff", "interaction_CI",  "interaction_pval")]  <- 
+     table6_imp[i, c("interaction_eff", "interaction_CI",  "interaction_pval", "interaction_paper_pval")]  <- 
                 extract_one_exp_mi(survey_imp, 
                 model_vars = model_vars, 
                 exposure = paste0("SexMale:", row_model$index_name[i]), 
-                Insomnia = ifelse(i %in% c(1,2), TRUE, FALSE))[, c("est", "CI", "pval")]
+                Insomnia = ifelse(i %in% c(1,2), TRUE, FALSE))[, c("est", "CI", "pval", "paper_pval")]
         
    
 }
@@ -604,7 +618,7 @@ sessionInfo()
 ```
 ## R version 4.2.3 (2023-03-15)
 ## Platform: aarch64-apple-darwin20 (64-bit)
-## Running under: macOS Ventura 13.6
+## Running under: macOS 14.6.1
 ## 
 ## Matrix products: default
 ## BLAS:   /Library/Frameworks/R.framework/Versions/4.2-arm64/Resources/lib/libRblas.0.dylib
@@ -630,16 +644,16 @@ sessionInfo()
 ##  [1] ggrepel_0.9.3     Rcpp_1.0.11       foreach_1.5.2     digest_0.6.33    
 ##  [5] utf8_1.2.3        R6_2.5.1          visdat_0.6.0      evaluate_0.21    
 ##  [9] pillar_1.9.0      rlang_1.1.1       rstudioapi_0.15.0 data.table_1.14.8
-## [13] car_3.1-2         jquerylib_0.1.4   rmarkdown_2.23    splines_4.2.3    
+## [13] car_3.1-2         jquerylib_0.1.4   rmarkdown_2.27    splines_4.2.3    
 ## [17] pander_0.6.5      munsell_0.5.0     compiler_4.2.3    xfun_0.39        
-## [21] pkgconfig_2.0.3   shape_1.4.6       htmltools_0.5.5   mitools_2.4      
+## [21] pkgconfig_2.0.3   shape_1.4.6       htmltools_0.5.8.1 mitools_2.4      
 ## [25] insight_0.19.3    tidyselect_1.2.0  gridExtra_2.3     codetools_0.2-19 
 ## [29] fansi_1.0.4       crayon_1.5.2      tzdb_0.4.0        withr_2.5.0      
 ## [33] jsonlite_1.8.7    gtable_0.3.3      lifecycle_1.0.3   DBI_1.1.3        
 ## [37] magrittr_2.0.3    scales_1.2.1      cli_3.6.1         stringi_1.7.12   
-## [41] cachem_1.0.8      carData_3.0-5     bslib_0.5.0       generics_0.1.3   
+## [41] cachem_1.0.8      carData_3.0-5     bslib_0.7.0       generics_0.1.3   
 ## [45] vctrs_0.6.3       iterators_1.0.14  tools_4.2.3       glue_1.6.2       
 ## [49] hms_1.1.3         abind_1.4-5       fastmap_1.1.1     yaml_2.3.7       
 ## [53] timechange_0.2.0  colorspace_2.1-0  knitr_1.43        haven_2.5.3      
-## [57] sass_0.4.7
+## [57] sass_0.4.9
 ```
