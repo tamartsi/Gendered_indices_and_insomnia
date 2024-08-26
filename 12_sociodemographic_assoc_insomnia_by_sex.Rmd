@@ -230,7 +230,7 @@ colnames(interaction_tab) <- c("exposure", "interation_est", "interaction_CI", "
 
 combined_tab <- cbind(insomnia_female_tab,
                       insomnia_male_tab[, c("exposure", "male_est", "male_CI", "male_pval","male_paper_pval")],
-                      interaction_tab$interaction_pval)
+                      interaction_tab[,c("interaction_pval", "interaction_paper_pval")])
 
 colnames(combined_tab)[grep("interaction_pval", colnames(combined_tab))] <- "Interaction_pval"
 colnames(combined_tab)[grep("interaction_paper_pval", colnames(combined_tab))] <- "Interaction_paper_pval"
@@ -319,7 +319,7 @@ colnames(interaction_tab) <- c("exposure", "interation_est", "interaction_CI", "
 
 combined_tab <- cbind(whiirs_female_tab,
                       whiirs_male_tab[, c("exposure", "male_est", "male_CI", "male_pval", "male_paper_pval")],
-                      interaction_tab$interaction_pval)
+                      interaction_tab[,c("interaction_pval","interaction_paper_pval")])
 
 colnames(combined_tab)[grep("interaction_pval", colnames(combined_tab))] <- "Interaction_pval"
 colnames(combined_tab)[grep("interaction_paper_pval", colnames(combined_tab))] <- "Interaction_paper_pval"

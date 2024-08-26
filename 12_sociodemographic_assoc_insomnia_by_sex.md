@@ -496,7 +496,7 @@ colnames(interaction_tab) <- c("exposure", "interation_est", "interaction_CI", "
 
 combined_tab <- cbind(insomnia_female_tab,
                       insomnia_male_tab[, c("exposure", "male_est", "male_CI", "male_pval","male_paper_pval")],
-                      interaction_tab$interaction_pval)
+                      interaction_tab[,c("interaction_pval", "interaction_paper_pval")])
 
 colnames(combined_tab)[grep("interaction_pval", colnames(combined_tab))] <- "Interaction_pval"
 colnames(combined_tab)[grep("interaction_paper_pval", colnames(combined_tab))] <- "Interaction_paper_pval"
@@ -602,6 +602,30 @@ combined_tab
 ## r21     1.13  (1.1,1.15)  8.40E-27       <0.001***         7.05E-01
 ## r22     1.43 (1.11,1.84)  5.08E-03         0.005**         1.88E-01
 ## r23     0.90 (0.74,1.09)  2.74E-01           0.274         9.09E-01
+##     Interaction_paper_pval
+## r1                   0.146
+## r2                   0.084
+## r3                   0.665
+## r4                   0.437
+## r5                   0.516
+## r6                   0.753
+## r7                   0.052
+## r8                   0.068
+## r9                   0.651
+## r10                  0.923
+## r11                  0.945
+## r12                  0.761
+## r13                  0.262
+## r14                  0.050
+## r15                  0.657
+## r16                  0.761
+## r17                  0.375
+## r18                  0.591
+## r19                  0.869
+## r20                0.007**
+## r21                  0.705
+## r22                  0.188
+## r23                  0.909
 ```
 
 
@@ -685,7 +709,7 @@ colnames(interaction_tab) <- c("exposure", "interation_est", "interaction_CI", "
 
 combined_tab <- cbind(whiirs_female_tab,
                       whiirs_male_tab[, c("exposure", "male_est", "male_CI", "male_pval", "male_paper_pval")],
-                      interaction_tab$interaction_pval)
+                      interaction_tab[,c("interaction_pval","interaction_paper_pval")])
 
 colnames(combined_tab)[grep("interaction_pval", colnames(combined_tab))] <- "Interaction_pval"
 colnames(combined_tab)[grep("interaction_paper_pval", colnames(combined_tab))] <- "Interaction_paper_pval"
@@ -792,6 +816,30 @@ combined_tab
 ## r21     1.39 (1.34,1.45)  3.01E-49       <0.001***         1.35E-01
 ## r22     2.84 (1.74,4.64)  3.25E-05       <0.001***         2.07E-01
 ## r23     0.83 (0.57,1.22)  3.53E-01           0.353         6.80E-01
+##     Interaction_paper_pval
+## r1                   0.479
+## r2                   0.086
+## r3                   0.418
+## r4                   0.256
+## r5                   0.895
+## r6                   0.849
+## r7                   0.183
+## r8                   0.382
+## r9                   0.941
+## r10                  0.636
+## r11                  0.786
+## r12                  0.728
+## r13                  0.271
+## r14                 0.012*
+## r15                  0.498
+## r16                  0.338
+## r17                  0.300
+## r18                  0.551
+## r19                  0.935
+## r20                 0.042*
+## r21                  0.135
+## r22                  0.207
+## r23                  0.680
 ```
 
 
